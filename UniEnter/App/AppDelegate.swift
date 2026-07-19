@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var enabledMenuItem: NSMenuItem!
     private let tapManager = EventTapManager()
     private let engine = RemapEngine()
+    private let inputSourceMonitor = InputSourceMonitor()
     private var permissionTimer: Timer?
 
     /// 書き換えを有効にするbundle IDの集合(M4でUserDefaults連動にする)
@@ -18,6 +19,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         observeWorkspace()
         updateFrontmost(NSWorkspace.shared.frontmostApplication)
+
+        engine.inputSourceChanged(isJapanese: inputSourceMonitor.isJapaneseMode)
+        inputSourceMonitor.onChange = { [weak self] isJapanese in
+            self?.engine.inputSourceChanged(isJapanese: isJapanese)
+        }
 
         tapManager.handler = { [weak self] type, event in
             self?.handleEvent(type: type, event: event) ?? event
@@ -123,6 +129,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func updateFrontmost(_ app: NSRunningApplication?) {
         let bundleID = app?.bundleIdentifier
         engine.frontmostChanged(isTarget: bundleID.map { enabledBundleIDs.contains($0) } ?? false)
+        // 通知取りこぼしに備えて入力ソースも同期し直す
+        inputSourceMonitor.refresh()
+        engine.isJapaneseMode = inputSourceMonitor.isJapaneseMode
     }
 
     @objc private func machineDidWake() {

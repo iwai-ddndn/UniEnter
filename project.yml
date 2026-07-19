@@ -25,4 +25,14 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.iwai.UniEnter
-    scheme: {}
+    scheme:
+      testTargets: [UniEnterTests]
+  UniEnterTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [UniEnterTests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: UniEnter
