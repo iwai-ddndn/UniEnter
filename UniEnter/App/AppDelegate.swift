@@ -6,16 +6,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem!
     private var statusMenuLine: NSMenuItem!
+    private var enabledMenuItem: NSMenuItem!
     private let tapManager = EventTapManager()
+    private let engine = RemapEngine()
     private var permissionTimer: Timer?
 
-    /// 前面アプリのbundle ID(NSWorkspace通知でキャッシュ。コールバックからはこれを参照)
-    private var frontmostBundleID: String?
+    /// 書き換えを有効にするbundle IDの集合(M4でUserDefaults連動にする)
+    private var enabledBundleIDs: Set<String> = AppRegistry.allBundleIDs
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         setupStatusItem()
         observeWorkspace()
-        frontmostBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        updateFrontmost(NSWorkspace.shared.frontmostApplication)
 
         tapManager.handler = { [weak self] type, event in
             self?.handleEvent(type: type, event: event) ?? event
@@ -23,14 +25,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startTapWhenPermitted()
     }
 
-    // MARK: - Event handling (M1: ログのみ)
+    // MARK: - Event handling
 
     private func handleEvent(type: CGEventType, event: CGEvent) -> CGEvent? {
-        if type == .keyDown {
+        switch type {
+        case .leftMouseDown:
+            engine.mouseDown()
+            return event
+        case .keyDown, .keyUp:
             let keycode = event.getIntegerValueField(.keyboardEventKeycode)
-            log.debug("keyDown keycode=\(keycode) frontmost=\(self.frontmostBundleID ?? "nil", privacy: .public)")
+            let mods = Self.modifiers(from: event.flags)
+            let action: RemapAction
+            if type == .keyDown {
+                let isPhysical = event.getIntegerValueField(.eventSourceStateID) == 1
+                action = engine.keyDown(keycode: keycode, mods: mods, isPhysical: isPhysical)
+            } else {
+                action = engine.keyUp(keycode: keycode, mods: mods)
+            }
+            apply(action, to: event)
+            return event
+        default:
+            return event
         }
-        return event
+    }
+
+    private static func modifiers(from flags: CGEventFlags) -> RemapEngine.Modifiers {
+        var mods: RemapEngine.Modifiers = []
+        if flags.contains(.maskShift) { mods.insert(.shift) }
+        if flags.contains(.maskCommand) { mods.insert(.command) }
+        if flags.contains(.maskControl) { mods.insert(.control) }
+        if flags.contains(.maskAlternate) { mods.insert(.option) }
+        return mods
+    }
+
+    private func apply(_ action: RemapAction, to event: CGEvent) {
+        switch action {
+        case .passThrough:
+            break
+        case .addShift:
+            event.flags.insert(.maskShift)
+        case .stripCommand:
+            var flags = event.flags
+            flags.remove(.maskCommand)
+            // デバイス依存のCmdビット(NX_DEVICELCMDKEYMASK / NX_DEVICERCMDKEYMASK)も除去
+            flags.remove(CGEventFlags(rawValue: 0x8))
+            flags.remove(CGEventFlags(rawValue: 0x10))
+            event.flags = flags
+        }
     }
 
     // MARK: - Accessibility permission
@@ -76,7 +117,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func appActivated(_ note: Notification) {
         let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-        frontmostBundleID = app?.bundleIdentifier
+        updateFrontmost(app)
+    }
+
+    private func updateFrontmost(_ app: NSRunningApplication?) {
+        let bundleID = app?.bundleIdentifier
+        engine.frontmostChanged(isTarget: bundleID.map { enabledBundleIDs.contains($0) } ?? false)
     }
 
     @objc private func machineDidWake() {
@@ -95,8 +141,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusMenuLine.isEnabled = false
         menu.addItem(statusMenuLine)
         menu.addItem(.separator())
+        enabledMenuItem = NSMenuItem(title: "有効", action: #selector(toggleEnabled), keyEquivalent: "")
+        enabledMenuItem.target = self
+        enabledMenuItem.state = .on
+        menu.addItem(enabledMenuItem)
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "UniEnterを終了", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
+        updateStatusUI()
+    }
+
+    @objc private func toggleEnabled() {
+        engine.isEnabled.toggle()
+        enabledMenuItem.state = engine.isEnabled ? .on : .off
         updateStatusUI()
     }
 
