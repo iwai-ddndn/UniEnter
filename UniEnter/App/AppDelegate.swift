@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import os
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -10,12 +11,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let tapManager = EventTapManager()
     private let engine = RemapEngine()
     private let inputSourceMonitor = InputSourceMonitor()
+    private let settingsStore = SettingsStore()
     private var permissionTimer: Timer?
+    private var settingsWindow: NSWindow?
 
-    /// 書き換えを有効にするbundle IDの集合(M4でUserDefaults連動にする)
-    private var enabledBundleIDs: Set<String> = AppRegistry.allBundleIDs
+    /// 書き換えを有効にするbundle IDの集合(UserDefaultsから読込・設定UIで更新)
+    private var enabledBundleIDs: Set<String> = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        enabledBundleIDs = settingsStore.enabledBundleIDs
         setupStatusItem()
         observeWorkspace()
         updateFrontmost(NSWorkspace.shared.frontmostApplication)
@@ -154,10 +158,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         enabledMenuItem.target = self
         enabledMenuItem.state = .on
         menu.addItem(enabledMenuItem)
+        let settingsItem = NSMenuItem(title: "設定…", action: #selector(openSettings), keyEquivalent: ",")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "UniEnterを終了", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
         updateStatusUI()
+    }
+
+    @objc private func openSettings() {
+        if settingsWindow == nil {
+            let model = SettingsViewModel(store: settingsStore)
+            model.onEnabledAppsChange = { [weak self] ids in
+                guard let self else { return }
+                self.enabledBundleIDs = ids
+                self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
+            }
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: model)))
+            window.title = "UniEnter 設定"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            settingsWindow = window
+        }
+        settingsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     @objc private func toggleEnabled() {
