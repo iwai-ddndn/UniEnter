@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settingsStore = SettingsStore()
     private var permissionTimer: Timer?
     private var settingsWindow: NSWindow?
+    private var onboardingWindow: NSWindow?
 
     /// 書き換えを有効にするbundle IDの集合(UserDefaultsから読込・設定UIで更新)
     private var enabledBundleIDs: Set<String> = []
@@ -93,13 +94,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             log.info("waiting for accessibility permission")
             updateStatusUI()
+            showOnboarding()
             permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
                 guard let self, AXIsProcessTrusted() else { return }
                 timer.invalidate()
                 self.permissionTimer = nil
+                self.onboardingWindow?.close()
+                self.onboardingWindow = nil
                 self.startTap()
             }
         }
+    }
+
+    private func showOnboarding() {
+        guard onboardingWindow == nil else { return }
+        let view = OnboardingView {
+            let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+            NSWorkspace.shared.open(url)
+        }
+        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+        window.title = "UniEnter"
+        window.styleMask = [.titled, .closable]
+        window.isReleasedWhenClosed = false
+        window.center()
+        onboardingWindow = window
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     private func startTap() {
