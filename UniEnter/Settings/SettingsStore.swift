@@ -20,6 +20,14 @@ final class SettingsStore {
         }
     }
 
+    private static let browserSupportKey = "browserSupportEnabled"
+
+    /// ブラウザ(Safari/Chrome系)で対象サービスのWeb版を開いているときも書き換えるか。既定ON。
+    var browserSupportEnabled: Bool {
+        get { defaults.object(forKey: Self.browserSupportKey) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Self.browserSupportKey) }
+    }
+
     var launchAtLogin: Bool {
         get { SMAppService.mainApp.status == .enabled }
         set {

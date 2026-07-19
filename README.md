@@ -17,6 +17,21 @@
 
 対象アプリ以外ではイベントに一切干渉しない。各アプリは送信キーが既定値(Enter=送信)である前提。
 
+### ブラウザのWeb版(既定で有効・設定でオフ可)
+
+Safari / Chrome系(Chrome, Edge, Brave, Vivaldi, Arc, Dia)で以下のタブを開いているときも同じ統一が効く。
+判定は対応するアプリのチェックボックスに連動する。
+
+| サービス | 判定条件 |
+|---|---|
+| Slack | `app.slack.com` |
+| Teams | `teams.cloud.microsoft` / `teams.microsoft.com` / `teams.live.com` |
+| Discord | `discord.com`(ptb/canary含む)の `/channels` 配下 |
+| Chatwork | `www.chatwork.com` の `#!rid…`(チャット画面のみ) |
+
+LINEはWeb版が存在しないため対象外。FirefoxはAXでURLを取得できないため非対応。
+アドレスバー編集中(そこでのEnterはナビゲーション)は書き換えを自動停止する。
+
 ## ビルド
 
 要件: Xcode / [XcodeGen](https://github.com/yonaskolb/XcodeGen)(`brew install xcodegen`)
@@ -43,6 +58,11 @@ xcodebuild -project UniEnter.xcodeproj -scheme UniEnter -configuration Debug -de
   対象アプリが前面のときだけ、Enter(keycode 36/76)にShiftを付与(=改行)、⌘EnterからCmdを除去(=送信)する。
   書き換えは受信イベントのin-place改変(新規イベントのpostはしない)。
 - タップが`kCGEventTapDisabledByTimeout`等で無効化されたら即時再有効化。スリープ復帰・セッション切替時にも確認する。
+- ブラウザ判定はAX APIのみで行う(追加権限なし)。SafariはAXWebAreaの`AXURL`、Chrome系は
+  アドレスバー(omnibox)の`AXValue`を読む。`AXEnhancedUserInterface`はウィンドウ操作を壊す
+  既知の副作用があるため使わない。タブ切替等はAXObserver通知で検知し、AX問い合わせは
+  専用キューで非同期に行って結果だけをキャッシュする(タップコールバックからは呼ばない)。
+  判定不能時は常に「書き換えない」。
 
 ### 日本語IME対応(重要)
 
@@ -69,6 +89,8 @@ UniEnter/
   App/            main.swift, AppDelegate.swift(配線・メニューバー)
   EventTap/       EventTapManager.swift(タップ管理)
                   RemapEngine.swift(書き換え判定の純粋ロジック、ユニットテスト対象)
+  Browser/        WebAppMatcher.swift(Web版URL判定の純粋ロジック、ユニットテスト対象)
+                  BrowserTabMonitor.swift(AXObserverによるタブ監視・非同期URL評価)
   IME/            InputSourceMonitor.swift(TIS入力ソースのキャッシュ)
   Settings/       AppRegistry.swift(対象アプリ定義)、SettingsStore.swift(UserDefaults)
   UI/             SettingsView.swift(設定)、OnboardingView.swift(許可誘導)

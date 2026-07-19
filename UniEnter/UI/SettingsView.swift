@@ -3,15 +3,18 @@ import SwiftUI
 final class SettingsViewModel: ObservableObject {
     @Published var enabledBundleIDs: Set<String>
     @Published var launchAtLogin: Bool
+    @Published var browserSupport: Bool
 
     private let store: SettingsStore
     /// 有効アプリ集合が変わったときにAppDelegateへ伝える
     var onEnabledAppsChange: ((Set<String>) -> Void)?
+    var onBrowserSupportChange: ((Bool) -> Void)?
 
     init(store: SettingsStore) {
         self.store = store
         self.enabledBundleIDs = store.enabledBundleIDs
         self.launchAtLogin = store.launchAtLogin
+        self.browserSupport = store.browserSupportEnabled
     }
 
     func isEnabled(_ app: TargetApp) -> Binding<Bool> {
@@ -34,6 +37,12 @@ final class SettingsViewModel: ObservableObject {
         // 登録に失敗した場合に備えて実状態を読み直す
         launchAtLogin = store.launchAtLogin
     }
+
+    func setBrowserSupport(_ value: Bool) {
+        browserSupport = value
+        store.browserSupportEnabled = value
+        onBrowserSupportChange?(value)
+    }
 }
 
 struct SettingsView: View {
@@ -55,6 +64,14 @@ struct SettingsView: View {
             .padding(.leading, 4)
 
             Divider()
+
+            Toggle("ブラウザのWeb版でも有効", isOn: Binding(
+                get: { model.browserSupport },
+                set: { model.setBrowserSupport($0) }
+            ))
+            Text("Safari/Chrome系で各サービスのWeb版(app.slack.com など)を開いているタブでも統一します。LINEとFirefoxは非対応。")
+                .font(.caption)
+                .foregroundColor(.secondary)
 
             Toggle("ログイン時に起動", isOn: Binding(
                 get: { model.launchAtLogin },

@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let tapManager = EventTapManager()
     private let engine = RemapEngine()
     private let inputSourceMonitor = InputSourceMonitor()
+    private let browserMonitor = BrowserTabMonitor()
     private let settingsStore = SettingsStore()
     private var permissionTimer: Timer?
     private var settingsWindow: NSWindow?
@@ -18,11 +19,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 書き換えを有効にするbundle IDの集合(UserDefaultsから読込・設定UIで更新)
     private var enabledBundleIDs: Set<String> = []
+    /// 前面アプリ(NSWorkspace通知でキャッシュ)
+    private var frontmostApp: NSRunningApplication?
+    /// 前面ブラウザが対象サービスのWeb版を開いているとき、対応するアプリのbundle ID
+    private var webServiceBundleID: String?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         enabledBundleIDs = settingsStore.enabledBundleIDs
         setupStatusItem()
         observeWorkspace()
+
+        browserMonitor.isEnabled = settingsStore.browserSupportEnabled
+        browserMonitor.onChange = { [weak self] serviceID in
+            self?.webServiceBundleID = serviceID
+            self?.recomputeTarget()
+        }
         updateFrontmost(NSWorkspace.shared.frontmostApplication)
 
         engine.inputSourceChanged(isJapanese: inputSourceMonitor.isJapaneseMode)
@@ -139,6 +150,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let center = NSWorkspace.shared.notificationCenter
         center.addObserver(self, selector: #selector(appActivated(_:)),
                            name: NSWorkspace.didActivateApplicationNotification, object: nil)
+        center.addObserver(self, selector: #selector(appTerminated(_:)),
+                           name: NSWorkspace.didTerminateApplicationNotification, object: nil)
         center.addObserver(self, selector: #selector(machineDidWake),
                            name: NSWorkspace.didWakeNotification, object: nil)
         center.addObserver(self, selector: #selector(machineDidWake),
@@ -150,12 +163,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateFrontmost(app)
     }
 
+    @objc private func appTerminated(_ note: Notification) {
+        if let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
+            browserMonitor.appTerminated(app)
+        }
+    }
+
     private func updateFrontmost(_ app: NSRunningApplication?) {
-        let bundleID = app?.bundleIdentifier
-        engine.frontmostChanged(isTarget: bundleID.map { enabledBundleIDs.contains($0) } ?? false)
+        frontmostApp = app
+        browserMonitor.frontmostChanged(app)
+        recomputeTarget()
         // 通知取りこぼしに備えて入力ソースも同期し直す
         inputSourceMonitor.refresh()
         engine.isJapaneseMode = inputSourceMonitor.isJapaneseMode
+    }
+
+    /// ネイティブアプリ判定とブラウザWeb版判定を合成してエンジンへ反映する
+    private func recomputeTarget() {
+        let native = frontmostApp?.bundleIdentifier.map { enabledBundleIDs.contains($0) } ?? false
+        let web = webServiceBundleID.map { enabledBundleIDs.contains($0) } ?? false
+        engine.frontmostChanged(isTarget: native || web)
     }
 
     @objc private func machineDidWake() {
@@ -194,6 +221,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let self else { return }
                 self.enabledBundleIDs = ids
                 self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
+            }
+            model.onBrowserSupportChange = { [weak self] enabled in
+                self?.browserMonitor.isEnabled = enabled
             }
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: model)))
             window.title = "UniEnter 設定"
