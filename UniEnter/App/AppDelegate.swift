@@ -60,7 +60,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let action: RemapAction
             if type == .keyDown {
                 let isPhysical = event.getIntegerValueField(.eventSourceStateID) == 1
+                let wasComposing = engine.isComposing
                 action = engine.keyDown(keycode: keycode, mods: mods, isPhysical: isPhysical)
+                if keycode == 36 || keycode == 76 {
+                    // 切り分け用: Enterの判定内訳を残す(log show で確認可能なnoticeレベル)
+                    log.notice("return keyDown mods=\(mods.rawValue) physical=\(isPhysical) target=\(self.engine.isTargetAppActive) ja=\(self.engine.isJapaneseMode) composing=\(wasComposing) -> \(String(describing: action), privacy: .public)")
+                }
             } else {
                 action = engine.keyUp(keycode: keycode, mods: mods)
             }
@@ -185,11 +190,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         engine.isJapaneseMode = inputSourceMonitor.isJapaneseMode
     }
 
+    /// メニューに表示する現在の判定状態(切り分け用の診断表示)
+    private var currentTargetLabel: String?
+
     /// ネイティブアプリ判定とブラウザWeb版判定を合成してエンジンへ反映する
     private func recomputeTarget() {
-        let native = frontmostApp?.bundleIdentifier.map { enabledBundleIDs.contains($0) } ?? false
-        let web = webServiceBundleID.map { enabledBundleIDs.contains($0) } ?? false
-        engine.frontmostChanged(isTarget: native || web)
+        let nativeID = frontmostApp?.bundleIdentifier.flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
+        let webID = webServiceBundleID.flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
+        engine.frontmostChanged(isTarget: nativeID != nil || webID != nil)
+
+        if let id = nativeID {
+            currentTargetLabel = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
+        } else if let id = webID {
+            let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
+            currentTargetLabel = "\(name) (Web)"
+        } else {
+            currentTargetLabel = nil
+        }
+        updateStatusUI()
     }
 
     @objc private func machineDidWake() {
@@ -256,7 +274,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusItem.button?.image = NSImage(systemSymbolName: "exclamationmark.triangle",
                                               accessibilityDescription: "権限が必要")
         } else if tapManager.isRunning {
-            statusMenuLine.title = "動作中"
+            if let label = currentTargetLabel {
+                statusMenuLine.title = "動作中 — 対象: \(label)"
+            } else {
+                statusMenuLine.title = "動作中 — 前面は対象外"
+            }
             statusItem.button?.image = NSImage(systemSymbolName: "return",
                                               accessibilityDescription: "UniEnter")
         } else {

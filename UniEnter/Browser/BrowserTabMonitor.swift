@@ -121,7 +121,7 @@ final class BrowserTabMonitor {
         // アドレスバー等ブラウザUIのテキスト欄を編集中は無効にする
         // (そこでのEnterはナビゲーション操作であり書き換えてはいけない)
         if let focused = copyElement(app, kAXFocusedUIElementAttribute),
-           isBrowserChromeTextField(focused, kind: kind) {
+           isBrowserChromeTextField(focused) {
             return nil
         }
 
@@ -142,24 +142,20 @@ final class BrowserTabMonitor {
     }
 
     /// フォーカス要素がブラウザ自身のUI(アドレスバー・検索バー等)のテキスト欄か。
-    private static func isBrowserChromeTextField(_ element: AXUIElement, kind: BrowserKind) -> Bool {
+    /// Webページ内のテキスト欄はAXWebAreaの子孫として現れるため、祖先にAXWebAreaが
+    /// 無いテキスト欄だけをブラウザUIとみなす。Chromium系もレンダラAXが有効な環境
+    /// (他の支援技術ツールが常駐している等)ではページ内テキスト欄が露出するので、
+    /// ロールだけで判定するとメッセージ入力欄で誤って無効化してしまう。
+    private static func isBrowserChromeTextField(_ element: AXUIElement) -> Bool {
         let textRoles: Set<String> = ["AXTextField", "AXSearchField", "AXComboBox", "AXTextArea"]
         guard let role = role(of: element), textRoles.contains(role) else { return false }
-        switch kind {
-        case .chromium:
-            // Web内テキスト欄はレンダラAX無効のため露出しない。
-            // テキスト欄ロールが取れたらブラウザUIとみなす。
-            return true
-        case .safari:
-            // Webページ内のテキスト欄はAXWebAreaの子孫。祖先にAXWebAreaが無ければブラウザUI。
-            var current = element
-            for _ in 0..<20 {
-                guard let parent = copyElement(current, kAXParentAttribute) else { return true }
-                if self.role(of: parent) == "AXWebArea" { return false }
-                current = parent
-            }
-            return true
+        var current = element
+        for _ in 0..<25 {
+            guard let parent = copyElement(current, kAXParentAttribute) else { return true }
+            if self.role(of: parent) == "AXWebArea" { return false }
+            current = parent
         }
+        return true
     }
 
     /// Safari: ウィンドウ配下からAXWebAreaを探し、そのAXURLを読む
