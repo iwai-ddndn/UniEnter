@@ -115,6 +115,8 @@ final class BrowserTabMonitor {
 
     // MARK: - 評価(axQueue上で実行)
 
+    private static let evalLog = Logger(subsystem: "dev.iwai.UniEnter", category: "browser-eval")
+
     private static func evaluate(pid: pid_t, kind: BrowserKind) -> String? {
         let app = AXUIElementCreateApplication(pid)
 
@@ -122,11 +124,15 @@ final class BrowserTabMonitor {
         // (そこでのEnterはナビゲーション操作であり書き換えてはいけない)
         if let focused = copyElement(app, kAXFocusedUIElementAttribute),
            isBrowserChromeTextField(focused) {
+            evalLog.notice("eval pid=\(pid): address bar focused -> inactive")
             return nil
         }
 
         guard let window = copyElement(app, kAXFocusedWindowAttribute)
-                ?? copyElement(app, kAXMainWindowAttribute) else { return nil }
+                ?? copyElement(app, kAXMainWindowAttribute) else {
+            evalLog.notice("eval pid=\(pid): no focused/main window")
+            return nil
+        }
 
         let url: URL?
         switch kind {
@@ -137,8 +143,13 @@ final class BrowserTabMonitor {
             // 既知の副作用があるため使わず、常時公開されるアドレスバーの値を読む
             url = findOmniboxURL(in: window)
         }
-        guard let url else { return nil }
-        return WebAppMatcher.serviceBundleID(for: url)
+        guard let url else {
+            evalLog.notice("eval pid=\(pid): url not found (kind=\(String(describing: kind), privacy: .public))")
+            return nil
+        }
+        let service = WebAppMatcher.serviceBundleID(for: url)
+        evalLog.notice("eval pid=\(pid): url=\(url.host ?? "?", privacy: .public)\(url.path, privacy: .public) -> \(service ?? "no match", privacy: .public)")
+        return service
     }
 
     /// フォーカス要素がブラウザ自身のUI(アドレスバー・検索バー等)のテキスト欄か。
@@ -162,7 +173,7 @@ final class BrowserTabMonitor {
     private static func findWebAreaURL(in window: AXUIElement) -> URL? {
         var visited = 0
         func search(_ element: AXUIElement, depth: Int) -> URL? {
-            guard visited < 400, depth < 12 else { return nil }
+            guard visited < 800, depth < 14 else { return nil }
             visited += 1
             if role(of: element) == "AXWebArea" {
                 return copyURL(element, "AXURL")
@@ -176,13 +187,16 @@ final class BrowserTabMonitor {
     }
 
     /// Chromium系: ウィンドウ配下からURLとして解釈できる値を持つ最初のAXTextField
-    /// (=アドレスバー)を探す。レンダラAXは無効のためツリーはブラウザUIのみで小さい。
+    /// (=アドレスバー)を探す。レンダラAXが有効な環境ではWebコンテンツのツリーが
+    /// 巨大になるため、AXWebArea配下(アドレスバーは絶対に無い)へは降りない。
     private static func findOmniboxURL(in window: AXUIElement) -> URL? {
         var visited = 0
         func search(_ element: AXUIElement, depth: Int) -> URL? {
-            guard visited < 400, depth < 10 else { return nil }
+            guard visited < 1000, depth < 12 else { return nil }
             visited += 1
-            if role(of: element) == "AXTextField",
+            let role = self.role(of: element)
+            if role == "AXWebArea" { return nil }
+            if role == "AXTextField",
                let value = copyString(element, kAXValueAttribute),
                let url = WebAppMatcher.normalizedURL(from: value) {
                 return url
