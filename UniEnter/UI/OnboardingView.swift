@@ -3,6 +3,10 @@ import SwiftUI
 /// アクセシビリティ許可の誘導画面。許可はシステム設定でユーザー自身が行う。
 struct OnboardingView: View {
     var openSystemSettings: () -> Void
+    /// 許可プロンプトを再表示する(リストから削除して登録し直すケース用)
+    var requestPrompt: () -> Void
+
+    @State private var showTroubleshooting = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -31,8 +35,30 @@ struct OnboardingView: View {
             Label("許可を待っています…", systemImage: "hourglass")
                 .font(.caption)
                 .foregroundColor(.secondary)
+
+            if showTroubleshooting {
+                Divider()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("オンにしても進まない場合")
+                        .font(.subheadline.bold())
+                    Text("""
+                    リストにある UniEnter が古いビルドを指している可能性があります(再ビルド後に起こります)。
+                    1. システム設定のアクセシビリティで UniEnter を選び「−」で削除
+                    2. 下の「許可をやり直す」を押して登録し直し、あらためてオンにする
+                    """)
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    Button("許可をやり直す") {
+                        requestPrompt()
+                    }
+                }
+            }
         }
         .padding(24)
-        .frame(width: 380)
+        .frame(width: 400)
+        .task {
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
+            showTroubleshooting = true
+        }
     }
 }

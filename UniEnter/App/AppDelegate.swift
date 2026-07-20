@@ -119,10 +119,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showOnboarding() {
         guard onboardingWindow == nil else { return }
-        let view = OnboardingView {
-            let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
-            NSWorkspace.shared.open(url)
-        }
+        let view = OnboardingView(
+            openSystemSettings: {
+                let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+                NSWorkspace.shared.open(url)
+            },
+            requestPrompt: {
+                // リストから削除された後に呼ぶと、現在のビルドで項目が登録し直される
+                let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+                _ = AXIsProcessTrustedWithOptions(options)
+            }
+        )
         let window = NSWindow(contentViewController: NSHostingController(rootView: view))
         window.title = "UniEnter"
         window.styleMask = [.titled, .closable]
