@@ -125,7 +125,16 @@ function StatRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-const desktopApps = ["Slack", "Microsoft Teams", "Discord", "LINE", "Chatwork"]
+const desktopApps = [
+  "Slack",
+  "Microsoft Teams",
+  "Discord",
+  "LINE",
+  "Chatwork",
+  "ChatGPT",
+  "Claude",
+  "Messenger",
+]
 
 const faqs = [
   {
@@ -165,14 +174,14 @@ export default function App() {
           macOS用メニューバーアプリ・無料
         </Badge>
         <h1 className="text-3xl leading-snug font-bold sm:text-5xl sm:leading-snug">
-          どんなメッセージアプリでも、
+          どのアプリでも、
           <br />
           改行と送信を統一。
         </h1>
         <p className="mx-auto mt-5 max-w-lg text-muted-foreground">
           Enterはいつでも改行、送信は⌘Enter。
           <br />
-          アプリごとにバラバラな挙動が生む「うっかり送信」をなくします。
+          SlackもTeamsも、ChatGPTもClaudeも — 「うっかり送信」をなくします。
         </p>
 
         <HeroVisual />
@@ -197,6 +206,11 @@ export default function App() {
           <p className="mx-auto mb-10 max-w-md text-center text-muted-foreground">
             対象のアプリやタブが前面のときだけ働きます。それ以外には一切干渉しません。
           </p>
+          <img
+            src="./assets/macbook.png"
+            alt="MacBookでチャットアプリを使っている様子"
+            className="mb-10 w-full rounded-xl border shadow-sm"
+          />
           <div className="grid gap-5 sm:grid-cols-2">
             <WindowMock title="デスクトップアプリ">
               <div className="flex flex-wrap gap-2">
@@ -213,8 +227,8 @@ export default function App() {
             <WindowMock title="ブラウザ — Safari / Chrome / Edge / Arc など">
               <div className="space-y-2">
                 <UrlRow url="app.slack.com" active />
-                <UrlRow url="teams.cloud.microsoft" active />
-                <UrlRow url="discord.com/channels/…" active />
+                <UrlRow url="chatgpt.com" active />
+                <UrlRow url="gemini.google.com" active />
                 <UrlRow url="example.com" active={false} />
               </div>
             </WindowMock>

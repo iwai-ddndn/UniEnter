@@ -43,6 +43,20 @@ enum WebAppMatcher {
             // チャット画面は #!rid{数字}。ログインページ等でフォーム送信のEnterを壊さない
             if hostOnly { return "com.electron.chatwork" }
             return (url.fragment?.hasPrefix("!rid") ?? false) ? "com.electron.chatwork" : nil
+        case "chatgpt.com", "chat.openai.com":
+            // マーケティングは openai.com 側
+            return "com.openai.codex"
+        case "claude.ai":
+            // マーケティングは claude.com / anthropic.com 側
+            return "com.anthropic.claudefordesktop"
+        case "gemini.google.com":
+            return "web.gemini.google.com"
+        case "www.messenger.com", "messenger.com":
+            return "com.facebook.archon"
+        case "www.facebook.com", "facebook.com":
+            // messenger.com閉鎖後の本体。メッセージ画面のパスに限定(コメント欄等に干渉しない)
+            if hostOnly { return nil }
+            return url.path.hasPrefix("/messages") ? "com.facebook.archon" : nil
         default:
             return nil
         }

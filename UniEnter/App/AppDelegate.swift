@@ -199,7 +199,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// ネイティブアプリ判定とブラウザWeb版判定を合成してエンジンへ反映する
     private func recomputeTarget() {
-        let nativeID = frontmostApp?.bundleIdentifier.flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
+        let nativeID = frontmostApp?.bundleIdentifier
+            .map(AppRegistry.canonicalBundleID)
+            .flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
         let webID = webServiceBundleID.flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
 
         // アプリ側の送信キーが⌘Enterのアプリは既に統一挙動なので書き換えない。

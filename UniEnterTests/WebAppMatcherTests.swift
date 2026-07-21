@@ -56,6 +56,32 @@ final class WebAppMatcherTests: XCTestCase {
         XCTAssertNil(match("https://go.chatwork.com/ja/"))
     }
 
+    // MARK: - AIチャット・Messenger
+
+    func testAIChatServicesMatch() {
+        XCTAssertEqual(match("https://chatgpt.com/c/12345"), "com.openai.codex")
+        XCTAssertEqual(match("https://chat.openai.com/"), "com.openai.codex")
+        XCTAssertEqual(match("https://claude.ai/new"), "com.anthropic.claudefordesktop")
+        XCTAssertEqual(match("https://gemini.google.com/app"), "web.gemini.google.com")
+    }
+
+    func testMessengerMatches() {
+        XCTAssertEqual(match("https://www.messenger.com/t/12345"), "com.facebook.archon")
+        XCTAssertEqual(match("https://www.facebook.com/messages/t/12345"), "com.facebook.archon")
+    }
+
+    func testAIMarketingSitesDoNotMatch() {
+        XCTAssertNil(match("https://openai.com/chatgpt"))
+        XCTAssertNil(match("https://www.anthropic.com/claude"))
+        XCTAssertNil(match("https://www.facebook.com/"))
+    }
+
+    func testFacebookHostOnlyDoesNotMatch() {
+        // Arc等のドメインのみ取得ではfacebook.com全域を対象にしない
+        let url = URL(string: "https://www.facebook.com/")!
+        XCTAssertNil(WebAppMatcher.serviceBundleID(for: url, hostOnly: true))
+    }
+
     // MARK: - その他
 
     func testUnrelatedSitesDoNotMatch() {
