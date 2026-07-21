@@ -1,27 +1,27 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* ダーク単一テーマ(shadcn/uiトークン) */
+/* ライト単一テーマ(Notion風のトーン) */
 :root {
-  --background: #0d1117;
-  --foreground: #e6edf3;
-  --card: #151c27;
-  --card-foreground: #e6edf3;
-  --popover: #151c27;
-  --popover-foreground: #e6edf3;
-  --primary: #4f8ef7;
+  --background: #ffffff;
+  --foreground: #37352f;
+  --card: #ffffff;
+  --card-foreground: #37352f;
+  --popover: #ffffff;
+  --popover-foreground: #37352f;
+  --primary: #37352f;
   --primary-foreground: #ffffff;
-  --secondary: #1b2330;
-  --secondary-foreground: #e6edf3;
-  --muted: #1b2330;
-  --muted-foreground: #94a1b0;
-  --accent: #1e2836;
-  --accent-foreground: #e6edf3;
-  --destructive: #ff7777;
-  --border: #26303f;
-  --input: #26303f;
-  --ring: #4f8ef7;
-  --radius: 0.75rem;
+  --secondary: #f1f1ef;
+  --secondary-foreground: #37352f;
+  --muted: #f7f7f5;
+  --muted-foreground: #73726e;
+  --accent: #f1f1ef;
+  --accent-foreground: #37352f;
+  --destructive: #d44c47;
+  --border: #e6e6e4;
+  --input: #e6e6e4;
+  --ring: #2383e2;
+  --radius: 0.5rem;
 }
 
 @theme inline {
