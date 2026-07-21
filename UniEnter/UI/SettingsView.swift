@@ -110,6 +110,12 @@ struct SettingsView: View {
                 get: { model.launchAtLogin },
                 set: { model.setLaunchAtLogin($0) }
             ))
+
+            Divider()
+
+            Text("制作: octo — [info@oc-to.com](mailto:info@oc-to.com)")
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
         .padding(20)
         .frame(width: 320)

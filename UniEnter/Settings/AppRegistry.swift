@@ -13,8 +13,6 @@ enum AppRegistry {
         TargetApp(name: "Slack", bundleID: "com.tinyspeck.slackmacgap"),
         TargetApp(name: "Discord", bundleID: "com.hnc.Discord"),
         TargetApp(name: "LINE", bundleID: "jp.naver.line.mac"),
-        // Electronビルダー既定の接頭辞をそのまま使っている(com.chatwork.* ではない)
-        TargetApp(name: "Chatwork", bundleID: "com.electron.chatwork"),
         // 2026年7月のCodex統合後の現行ChatGPT.app。旧ChatGPT Classicはaliasesで対応
         TargetApp(name: "ChatGPT", bundleID: "com.openai.codex"),
         TargetApp(name: "Claude", bundleID: "com.anthropic.claudefordesktop"),
@@ -23,6 +21,9 @@ enum AppRegistry {
         TargetApp(name: "Gemini", bundleID: "web.gemini.google.com"),
         // デスクトップアプリは2025年末に廃止済み(残存インストール向け)。主戦場はWeb判定
         TargetApp(name: "Messenger", bundleID: "com.facebook.archon"),
+        // XとInstagramのDMはWeb専用(公式デスクトップアプリなし)。設定キー兼Web判定用の擬似ID
+        TargetApp(name: "X(DM)", bundleID: "web.x.com"),
+        TargetApp(name: "Instagram(DM)", bundleID: "web.instagram.com"),
     ]
 
     /// 同一サービスの別bundle IDを代表IDへ寄せる(設定・判定は代表IDで行う)

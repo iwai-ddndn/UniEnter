@@ -39,10 +39,6 @@ enum WebAppMatcher {
             // discord.com ルートはマーケティングサイトのためパスで判定
             if hostOnly { return "com.hnc.Discord" }
             return url.path.hasPrefix("/channels") ? "com.hnc.Discord" : nil
-        case "www.chatwork.com":
-            // チャット画面は #!rid{数字}。ログインページ等でフォーム送信のEnterを壊さない
-            if hostOnly { return "com.electron.chatwork" }
-            return (url.fragment?.hasPrefix("!rid") ?? false) ? "com.electron.chatwork" : nil
         case "chatgpt.com", "chat.openai.com":
             // マーケティングは openai.com 側
             return "com.openai.codex"
@@ -57,6 +53,14 @@ enum WebAppMatcher {
             // messenger.com閉鎖後の本体。メッセージ画面のパスに限定(コメント欄等に干渉しない)
             if hostOnly { return nil }
             return url.path.hasPrefix("/messages") ? "com.facebook.archon" : nil
+        case "x.com", "www.x.com", "twitter.com", "www.twitter.com":
+            // DMのみ対象(ポスト作成欄は元々Enter=改行なので触らない)
+            if hostOnly { return nil }
+            return url.path.hasPrefix("/messages") ? "web.x.com" : nil
+        case "www.instagram.com", "instagram.com":
+            // DMのみ対象(コメント欄等に干渉しない)
+            if hostOnly { return nil }
+            return url.path.hasPrefix("/direct") ? "web.instagram.com" : nil
         default:
             return nil
         }

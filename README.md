@@ -12,14 +12,18 @@
 
 ## 対象アプリ
 
-| アプリ | bundle ID |
-|---|---|
-| Microsoft Teams(新) | `com.microsoft.teams2` |
-| Microsoft Teams(classic) | `com.microsoft.teams` |
-| Slack | `com.tinyspeck.slackmacgap` |
-| Discord | `com.hnc.Discord` |
-| LINE | `jp.naver.line.mac` |
-| Chatwork | `com.electron.chatwork` |
+| サービス | デスクトップアプリ | Web版 |
+|---|---|---|
+| Slack | ○ | app.slack.com |
+| Microsoft Teams(新/classic) | ○ | teams.cloud.microsoft ほか |
+| Discord | ○ | discord.com/channels |
+| LINE | ○ | —(Web版なし) |
+| ChatGPT | ○(Codex統合版/Classic両対応) | chatgpt.com |
+| Claude | ○ | claude.ai |
+| Gemini | —(ID確認中) | gemini.google.com |
+| Messenger | ○(廃止済みアプリの残存向け) | messenger.com / facebook.com/messages |
+| X | — | x.com/messages(DMのみ) |
+| Instagram | — | instagram.com/direct(DMのみ) |
 
 対象アプリ以外ではイベントに一切干渉しない。
 
@@ -112,3 +116,7 @@ UniEnterTests/    RemapEngineTests.swift(判定ロジックの網羅テスト)
 ```
 
 `project.yml`(XcodeGen)がプロジェクト定義のソースオブトゥルース。`.xcodeproj`は生成物でありgit管理外。
+
+## 制作者
+
+octo — お問い合わせ: [info@oc-to.com](mailto:info@oc-to.com)

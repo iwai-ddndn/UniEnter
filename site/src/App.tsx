@@ -73,7 +73,6 @@ const desktopApps = [
   "Microsoft Teams",
   "Discord",
   "LINE",
-  "Chatwork",
   "ChatGPT",
   "Claude",
   "Messenger",
@@ -180,14 +179,15 @@ export default function App() {
                 ))}
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
-                設定のチェックボックスでアプリごとにオン/オフできます
+                設定のチェックボックスでアプリごとにオン/オフできます。
+                XとInstagramのDM・GeminiはWeb版で対応。
               </p>
             </WindowMock>
             <WindowMock title="ブラウザ — Safari / Chrome / Edge / Arc など">
               <div className="space-y-2">
                 <UrlRow url="app.slack.com" active />
                 <UrlRow url="chatgpt.com" active />
-                <UrlRow url="gemini.google.com" active />
+                <UrlRow url="x.com/messages(DM)" active />
                 <UrlRow url="example.com" active={false} />
               </div>
             </WindowMock>
@@ -280,7 +280,12 @@ export default function App() {
           <a className="underline" href="https://github.com/iwai-ddndn/UniEnter/releases">ダウンロード</a>
           <a className="underline" href="./support.html">開発を支援</a>
         </p>
-        <p>© 2026 UniEnter</p>
+        <p>
+          © 2026 octo — お問い合わせ:{" "}
+          <a className="underline" href="mailto:info@oc-to.com">
+            info@oc-to.com
+          </a>
+        </p>
         <p className="mx-auto mt-2 max-w-lg">
           記載の製品名は各社の商標です。本アプリは各社と無関係の個人開発ソフトウェアです。
         </p>

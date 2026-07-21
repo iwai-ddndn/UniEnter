@@ -86,7 +86,12 @@ export default function SupportPage() {
       </main>
 
       <footer className="border-t px-6 py-10 text-center text-xs text-muted-foreground">
-        <p>© 2026 UniEnter</p>
+        <p>
+          © 2026 octo — お問い合わせ:{" "}
+          <a className="underline" href="mailto:info@oc-to.com">
+            info@oc-to.com
+          </a>
+        </p>
       </footer>
     </div>
   )

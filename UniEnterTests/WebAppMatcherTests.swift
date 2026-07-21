@@ -45,15 +45,29 @@ final class WebAppMatcherTests: XCTestCase {
         XCTAssertNil(match("https://discord.com/download"))
     }
 
-    // MARK: - Chatwork
+    // MARK: - X / Instagram (DMのみ)
 
-    func testChatworkChatScreenMatches() {
-        XCTAssertEqual(match("https://www.chatwork.com/#!rid12345"), "com.electron.chatwork")
+    func testXDirectMessagesMatch() {
+        XCTAssertEqual(match("https://x.com/messages/12345"), "web.x.com")
+        XCTAssertEqual(match("https://twitter.com/messages"), "web.x.com")
     }
 
-    func testChatworkLoginAndMarketingDoNotMatch() {
-        XCTAssertNil(match("https://www.chatwork.com/login.php"))
-        XCTAssertNil(match("https://go.chatwork.com/ja/"))
+    func testXTimelineDoesNotMatch() {
+        XCTAssertNil(match("https://x.com/home"))
+        XCTAssertNil(match("https://x.com/compose/post"))
+    }
+
+    func testInstagramDirectMatches() {
+        XCTAssertEqual(match("https://www.instagram.com/direct/t/12345"), "web.instagram.com")
+    }
+
+    func testInstagramFeedDoesNotMatch() {
+        XCTAssertNil(match("https://www.instagram.com/"))
+        XCTAssertNil(match("https://www.instagram.com/p/abc123/"))
+    }
+
+    func testChatworkNoLongerMatches() {
+        XCTAssertNil(match("https://www.chatwork.com/#!rid12345"))
     }
 
     // MARK: - AIチャット・Messenger
@@ -101,10 +115,10 @@ final class WebAppMatcherTests: XCTestCase {
         XCTAssertNil(WebAppMatcher.serviceBundleID(for: url, hostOnly: false))
     }
 
-    func testHostOnlyRelaxesChatworkFragmentRequirement() {
-        let url = URL(string: "https://www.chatwork.com/")!
-        XCTAssertEqual(WebAppMatcher.serviceBundleID(for: url, hostOnly: true), "com.electron.chatwork")
-        XCTAssertNil(WebAppMatcher.serviceBundleID(for: url, hostOnly: false))
+    func testHostOnlyDoesNotMatchPathGatedSocialHosts() {
+        // XやInstagramはDMパスが確認できない限り対象にしない(Arc等のドメインのみ取得)
+        XCTAssertNil(WebAppMatcher.serviceBundleID(for: URL(string: "https://x.com/")!, hostOnly: true))
+        XCTAssertNil(WebAppMatcher.serviceBundleID(for: URL(string: "https://www.instagram.com/")!, hostOnly: true))
     }
 
     func testHostOnlyStillRejectsUnrelatedHosts() {
