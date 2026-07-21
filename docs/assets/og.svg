@@ -1,0 +1,44 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="-10%" r="80%">
+      <stop offset="0%" stop-color="#2a4a8a"/>
+      <stop offset="100%" stop-color="#0d1117"/>
+    </radialGradient>
+    <linearGradient id="keycap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#232c3b"/>
+      <stop offset="100%" stop-color="#1a2230"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- brand -->
+  <text x="600" y="86" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="30" font-weight="600" fill="#e6edf3" letter-spacing="6">⏎ UniEnter</text>
+
+  <!-- row 1: Enter = 改行 -->
+  <g>
+    <rect x="352" y="150" width="230" height="96" rx="18" fill="url(#keycap)" stroke="#3a4a63" stroke-width="2"/>
+    <text x="467" y="212" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="42" font-weight="600" fill="#e6edf3">Enter</text>
+    <text x="640" y="214" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="44" fill="#9aa7b4">=</text>
+    <text x="775" y="216" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="58" font-weight="700" fill="#7ee2a8">改行</text>
+  </g>
+
+  <!-- row 2: ⌘ Enter = 送信 -->
+  <g>
+    <rect x="292" y="290" width="110" height="96" rx="18" fill="url(#keycap)" stroke="#3a4a63" stroke-width="2"/>
+    <text x="347" y="352" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="44" font-weight="600" fill="#e6edf3">⌘</text>
+    <rect x="416" y="290" width="230" height="96" rx="18" fill="url(#keycap)" stroke="#3a4a63" stroke-width="2"/>
+    <text x="531" y="352" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="42" font-weight="600" fill="#e6edf3">Enter</text>
+    <text x="704" y="354" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="44" fill="#9aa7b4">=</text>
+    <text x="839" y="356" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="58" font-weight="700" fill="#4f8ef7">送信</text>
+  </g>
+
+  <!-- copy -->
+  <text x="600" y="470" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="34" font-weight="700" fill="#e6edf3">すべてのチャットアプリで、Enterの挙動を統一。</text>
+
+  <!-- apps -->
+  <text x="600" y="525" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="24" fill="#9aa7b4">Slack・Microsoft Teams・Discord・LINE・Chatwork・各Web版</text>
+
+  <!-- footer chips -->
+  <text x="600" y="580" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="22" fill="#7ee2a8">日本語IMEに安全設計  /  誤送信ゼロへ  /  macOS用・無料</text>
+</svg>

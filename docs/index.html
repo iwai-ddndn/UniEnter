@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniEnter — Enterは改行、送信は⌘Enter。すべてのチャットアプリで。</title>
+<meta name="description" content="Slack・Teams・Discord・LINE・Chatworkでバラバラな「改行/送信」のEnterキー挙動を統一するmacOSメニューバーアプリ。日本語IMEに安全設計。無料。">
+<meta property="og:title" content="UniEnter — Enterは改行、送信は⌘Enter。">
+<meta property="og:description" content="チャットアプリごとにバラバラなEnterの挙動を統一。日本語IMEに安全設計のmacOSメニューバーアプリ。">
+<meta property="og:image" content="assets/og.png">
+<meta property="og:type" content="website">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161c26;
+    --card: #1b2330;
+    --text: #e6edf3;
+    --muted: #9aa7b4;
+    --accent: #4f8ef7;
+    --accent2: #7ee2a8;
+    --border: #2b3648;
+    --danger: #f77;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "SF Pro JP", -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.7;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  kbd {
+    display: inline-block;
+    padding: 2px 10px 4px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    border-bottom-width: 3px;
+    background: linear-gradient(180deg, #232c3b, #1a2230);
+    font-family: inherit;
+    font-size: 0.92em;
+    white-space: nowrap;
+  }
+
+  /* Hero */
+  header {
+    padding: 72px 0 56px;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(79,142,247,0.22), transparent),
+      var(--bg);
+    text-align: center;
+  }
+  .logo { font-size: 15px; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 28px; }
+  .logo b { color: var(--text); }
+  h1 { font-size: clamp(28px, 5.2vw, 46px); font-weight: 700; line-height: 1.35; }
+  h1 .keyline { display: inline-block; margin-top: 10px; }
+  .sub { margin: 22px auto 0; max-width: 640px; color: var(--muted); font-size: 16px; }
+  .cta { margin-top: 36px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block;
+    padding: 13px 30px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 16px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-ghost { border: 1px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { background: var(--card); }
+  .cta-note { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+
+  section { padding: 64px 0; }
+  section.alt { background: var(--bg2); }
+  h2 { font-size: clamp(22px, 3.6vw, 30px); text-align: center; margin-bottom: 12px; }
+  .lead { text-align: center; color: var(--muted); max-width: 640px; margin: 0 auto 40px; }
+
+  /* Before / After */
+  .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .ba { grid-template-columns: 1fr; } }
+  .ba .col { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 26px; }
+  .ba h3 { font-size: 15px; margin-bottom: 18px; color: var(--muted); font-weight: 600; }
+  .ba .col.after h3 { color: var(--accent2); }
+  .rowline { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px dashed var(--border); font-size: 14.5px; gap: 12px; }
+  .rowline:last-child { border-bottom: none; }
+  .rowline .app { color: var(--muted); }
+  .send { color: var(--danger); }
+  .nl { color: var(--accent2); }
+
+  /* Features */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 28px 26px; }
+  .card .icon { font-size: 26px; margin-bottom: 14px; }
+  .card h3 { font-size: 17px; margin-bottom: 10px; }
+  .card p { font-size: 14px; color: var(--muted); }
+
+  /* Apps */
+  .apps { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .app-chip {
+    padding: 10px 22px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--card);
+    font-size: 15px;
+  }
+  .apps-note { text-align: center; color: var(--muted); font-size: 13px; margin-top: 22px; }
+
+  /* FAQ */
+  details {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 12px;
+  }
+  summary { cursor: pointer; font-weight: 600; font-size: 15.5px; }
+  details p { margin-top: 12px; color: var(--muted); font-size: 14.5px; }
+
+  /* Support */
+  .support-box { text-align: center; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 44px 30px; }
+  .support-box p { color: var(--muted); max-width: 560px; margin: 0 auto 26px; font-size: 15px; }
+
+  footer { padding: 44px 0 60px; text-align: center; color: var(--muted); font-size: 12.5px; }
+  footer a { color: var(--muted); }
+  .trademark { max-width: 720px; margin: 14px auto 0; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">⏎ <b>UniEnter</b></div>
+    <h1>
+      そのEnter、送信ですか? 改行ですか?<br>
+      <span class="keyline"><kbd>Enter</kbd> は改行、<kbd>⌘</kbd><kbd>Enter</kbd> で送信。</span><br>
+      すべてのチャットアプリで。
+    </h1>
+    <p class="sub">
+      Slack・Teams・Discord・LINE・Chatwork — アプリごとにバラバラなEnterキーの挙動を、
+      メニューバーに常駐するアプリひとつで統一。「あっ、送っちゃった」をなくします。
+    </p>
+    <div class="cta">
+      <a class="btn btn-primary" href="#" id="download">ダウンロード</a>
+      <a class="btn btn-ghost" href="#faq">よくある質問</a>
+    </div>
+    <div class="cta-note">macOS 13 Ventura以降 / 無料</div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>書きかけの文章が、深夜に飛んでいく。</h2>
+    <p class="lead">
+      Teamsは Enterで送信。Slackは設定次第。日本語の変換確定のつもりが、メッセージ送信。
+      アプリを行き来するたびに指が混乱する——その問題を、システム側で解決します。
+    </p>
+    <div class="ba">
+      <div class="col">
+        <h3>いままで — アプリごとにバラバラ</h3>
+        <div class="rowline"><span class="app">Teams</span><span><kbd>Enter</kbd> = <span class="send">送信</span></span></div>
+        <div class="rowline"><span class="app">Slack</span><span><kbd>Enter</kbd> = <span class="send">送信</span>(設定で変わる)</span></div>
+        <div class="rowline"><span class="app">Discord</span><span><kbd>Enter</kbd> = <span class="send">送信</span></span></div>
+        <div class="rowline"><span class="app">LINE</span><span><kbd>Enter</kbd> = <span class="send">送信</span></span></div>
+        <div class="rowline"><span class="app">メモ・エディタ</span><span><kbd>Enter</kbd> = <span class="nl">改行</span></span></div>
+      </div>
+      <div class="col after">
+        <h3>UniEnter — ぜんぶ同じ</h3>
+        <div class="rowline"><span class="app">どのアプリでも</span><span><kbd>Enter</kbd> = <span class="nl">改行</span></span></div>
+        <div class="rowline"><span class="app">どのアプリでも</span><span><kbd>⌘</kbd><kbd>Enter</kbd> = <span class="send">送信</span></span></div>
+        <div class="rowline"><span class="app">日本語の変換確定</span><span><kbd>Enter</kbd> = <span class="nl">確定のみ</span></span></div>
+        <div class="rowline"><span class="app">対象外のアプリ</span><span>いっさい干渉しません</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2>日本語入力のために、作られています</h2>
+    <p class="lead">この種のツールの最大の難所は「変換確定のEnter」。UniEnterはここに一番こだわりました。</p>
+    <div class="cards">
+      <div class="card">
+        <div class="icon">🇯🇵</div>
+        <h3>変換確定のEnterは、絶対に触らない</h3>
+        <p>日本語IME(macOS標準・Google日本語入力)の変換中を推定し、確定のEnterは無加工で素通し。判定に迷ったときも「何もしない」に倒すフェイルセーフ設計です。</p>
+      </div>
+      <div class="card">
+        <div class="icon">🌐</div>
+        <h3>ブラウザのWeb版にも</h3>
+        <p>Safari・Chrome・Arc などで開いた Slack / Teams / Discord / Chatwork のWeb版も同じ操作感。アドレスバー入力中は自動で干渉を止めます。</p>
+      </div>
+      <div class="card">
+        <div class="icon">✅</div>
+        <h3>インストールして、チェックを入れるだけ</h3>
+        <p>設定は「対象アプリのオン/オフ」と少しだけ。アプリ側で送信キーを⌘Enterに変えている場合も、それを宣言すれば共存できます。</p>
+      </div>
+      <div class="card">
+        <div class="icon">🪶</div>
+        <h3>軽くて、何も送らない</h3>
+        <p>アイドル時のCPU使用率はほぼ0%。ネットワーク通信・解析は一切なし。文字の入力内容は読み取らず、Enter関連のキーだけを判定します。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>対応アプリ</h2>
+    <p class="lead">前面のアプリが対象のときだけ動作します。</p>
+    <div class="apps">
+      <span class="app-chip">Slack</span>
+      <span class="app-chip">Microsoft Teams</span>
+      <span class="app-chip">Discord</span>
+      <span class="app-chip">LINE</span>
+      <span class="app-chip">Chatwork</span>
+      <span class="app-chip">各サービスのWeb版</span>
+    </div>
+    <p class="apps-note">Web版はSafari / Chrome / Edge / Brave / Vivaldi / Arc に対応(Firefoxは非対応)。LINEはデスクトップアプリのみ。</p>
+  </div>
+</section>
+
+<section class="alt" id="faq">
+  <div class="wrap">
+    <h2>よくある質問</h2>
+    <p class="lead"></p>
+    <details>
+      <summary>なぜアクセシビリティ権限が必要?</summary>
+      <p>キーイベントを書き換えるにはmacOSのイベントタップという仕組みを使う必要があり、これにアクセシビリティ権限が求められます。必要な権限はこれひとつだけで、初回起動時に画面の案内に沿って許可できます。</p>
+    </details>
+    <details>
+      <summary>日本語の変換確定のEnterが送信されたりしない?</summary>
+      <p>しないよう設計しています。変換中と推定される間のEnterは一切加工せずIMEに渡します。さらに判定できないケースでは常に「加工しない」側に倒すため、誤って確定が壊れる方向には動きません。</p>
+    </details>
+    <details>
+      <summary>アプリ側で「⌘Enterで送信」に設定している</summary>
+      <p>そのアプリは既に UniEnter と同じ挙動です。設定画面でそのアプリの「送信キー」を⌘Enterに切り替えると、UniEnterは書き換えを行わず、アプリ本来の動作をそのまま使います。</p>
+    </details>
+    <details>
+      <summary>入力内容を読まれたりしない?</summary>
+      <p>読みません。判定に使うのはEnter系のキーイベントと修飾キー、前面アプリ、入力ソース(日本語かどうか)だけです。ネットワーク通信は行わず、ログの外部送信もありません。</p>
+    </details>
+    <details>
+      <summary>対象外のアプリへの影響は?</summary>
+      <p>ゼロです。前面アプリが対象リストにない場合、イベントには一切手を触れません。パスワード入力(Secure Input)中はmacOSの仕組み上そもそもイベントが渡ってきません。</p>
+    </details>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="support-box">
+      <h2>開発を支援する</h2>
+      <p>
+        UniEnterは無料で使えます。役に立ったら、コーヒー1杯分の投げ銭で開発を応援してもらえるとうれしいです。
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" href="#" id="donate">☕ 支援する</a>
+        <a class="btn btn-ghost" href="#" id="github">GitHub</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>© 2026 UniEnter</div>
+    <p class="trademark">
+      Slack、Microsoft Teams、Discord、LINE、Chatworkおよび各ロゴは各社の商標または登録商標です。
+      本アプリは各社と提携・承認関係にない独立した個人開発ソフトウェアです。
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
