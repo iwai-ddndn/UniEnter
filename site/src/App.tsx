@@ -7,60 +7,28 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Check, CornerDownLeft, Lock } from "lucide-react"
+import { CornerDownLeft, Lock } from "lucide-react"
 
 /* 改行=グリーン / 送信=ブルー(Notion系の落ち着いた色) */
 const NEWLINE = "#0f7b6c"
 const SEND = "#2383e2"
 
-function Key({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center justify-center rounded-lg border border-[#d9d9d6] bg-[#fbfbfa] font-medium text-foreground shadow-[0_2px_0_#e0e0dd] ${
-        wide ? "min-w-24 px-5" : "min-w-13 px-3"
-      } h-13 text-lg`}
-    >
-      {children}
-    </span>
-  )
-}
-
-function KeyRow({
-  keys,
-  result,
-  color,
-}: {
-  keys: string[]
-  result: string
-  color: string
-}) {
-  return (
-    <div className="flex items-center justify-center gap-4">
-      <div className="flex gap-1.5">
-        {keys.map((k) => (
-          <Key key={k} wide={k === "Enter"}>
-            {k}
-          </Key>
-        ))}
-      </div>
-      <span className="text-xl text-muted-foreground">→</span>
-      <span className="text-2xl font-bold" style={{ color }}>
-        {result}
-      </span>
-    </div>
-  )
-}
-
 function HeroVisual() {
   return (
-    <div className="mx-auto mt-12 max-w-2xl rounded-xl border bg-muted px-6 py-10">
-      <div className="space-y-6">
-        <KeyRow keys={["Enter"]} result="改行" color={NEWLINE} />
-        <KeyRow keys={["⌘", "Enter"]} result="送信" color={SEND} />
+    <div className="relative mx-auto mt-12 max-w-3xl overflow-hidden rounded-xl border shadow-sm">
+      <img
+        src="./assets/hero.png"
+        alt="Enterキーは改行、⌘Enterキーは送信"
+        className="block w-full"
+      />
+      <div className="absolute inset-x-0 bottom-[9%] flex text-lg font-bold sm:text-2xl">
+        <p className="w-1/2 text-center" style={{ color: NEWLINE }}>
+          Enter → 改行
+        </p>
+        <p className="w-1/2 text-center" style={{ color: SEND }}>
+          ⌘Enter → 送信
+        </p>
       </div>
-      <p className="mt-8 text-center text-sm text-muted-foreground">
-        どのアプリでも、この2つだけ。
-      </p>
     </div>
   )
 }
@@ -96,31 +64,6 @@ function UrlRow({ url, active }: { url: string; active: boolean }) {
           干渉しない
         </Badge>
       )}
-    </div>
-  )
-}
-
-function CheckRow({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2 text-sm">
-      <span
-        className="flex size-4 items-center justify-center rounded"
-        style={{ backgroundColor: SEND }}
-      >
-        <Check className="size-3 text-white" />
-      </span>
-      {label}
-    </div>
-  )
-}
-
-function StatRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between rounded-lg border bg-background px-3 py-2 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold" style={{ color: NEWLINE }}>
-        {value}
-      </span>
     </div>
   )
 }
@@ -241,36 +184,25 @@ export default function App() {
         <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-3">
           <Card className="shadow-sm">
             <CardContent className="pt-2">
-              <div className="mb-5 rounded-lg border bg-muted p-4">
-                <p className="text-lg">
-                  <span className="border-b-2 border-dotted border-foreground/50 pb-0.5">
-                    こんにちは
-                  </span>
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                  <span className="rounded-md border border-[#d9d9d6] bg-[#fbfbfa] px-2 py-0.5 text-xs font-medium">
-                    Enter
-                  </span>
-                  <span className="text-muted-foreground">→</span>
-                  <span className="font-medium" style={{ color: NEWLINE }}>
-                    確定のみ。送信されない
-                  </span>
-                </div>
-              </div>
+              <img
+                src="./assets/feature-ime.png"
+                alt="「あ」と刻印されたキーキャップ"
+                className="mb-5 aspect-[3/2] w-full rounded-lg border object-cover"
+              />
               <h3 className="mb-2 font-semibold">日本語入力に、とことん安全</h3>
               <p className="text-sm text-muted-foreground">
-                変換中のEnterには触れません。判定に迷ったら「何もしない」設計。
+                変換中のEnterには触れず、確定はそのまま。判定に迷ったら「何もしない」設計。
               </p>
             </CardContent>
           </Card>
 
           <Card className="shadow-sm">
             <CardContent className="pt-2">
-              <div className="mb-5 space-y-2 rounded-lg border bg-muted p-4">
-                <CheckRow label="Slack" />
-                <CheckRow label="Microsoft Teams" />
-                <CheckRow label="LINE" />
-              </div>
+              <img
+                src="./assets/feature-config.png"
+                alt="チェックボックス"
+                className="mb-5 aspect-[3/2] w-full rounded-lg border object-cover"
+              />
               <h3 className="mb-2 font-semibold">設定は、チェックを入れるだけ</h3>
               <p className="text-sm text-muted-foreground">
                 インストールして対象アプリを選ぶだけ。覚えることはありません。
@@ -280,14 +212,14 @@ export default function App() {
 
           <Card className="shadow-sm">
             <CardContent className="pt-2">
-              <div className="mb-5 space-y-2 rounded-lg border bg-muted p-4">
-                <StatRow label="アイドル時CPU" value="≈ 0%" />
-                <StatRow label="ネットワーク通信" value="なし" />
-                <StatRow label="入力内容の読み取り" value="なし" />
-              </div>
+              <img
+                src="./assets/feature-light.png"
+                alt="羽根"
+                className="mb-5 aspect-[3/2] w-full rounded-lg border object-cover"
+              />
               <h3 className="mb-2 font-semibold">軽くて、何も送らない</h3>
               <p className="text-sm text-muted-foreground">
-                判定するのはEnter関連のキーだけ。文章は読まず、外部にも送りません。
+                CPUほぼ0%。通信・解析ゼロ。判定するのはEnter関連のキーだけで、文章は読みません。
               </p>
             </CardContent>
           </Card>
