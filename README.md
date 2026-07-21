@@ -4,7 +4,7 @@
 
 **統一後の挙動: Enter = 改行、⌘Enter = 送信**
 
-- **ダウンロード**: [最新リリース](https://github.com/iwai-ddndn/UniEnter/releases/latest)(macOS 13以降・無料)
+- **ダウンロード**: [最新リリース](https://github.com/iwai-ddndn/UniEnter/releases/latest)(macOS 13以降・無料。`.pkg`をダブルクリックでインストール、`.zip`版もあり)
 - **紹介ページ**: https://iwai-ddndn.github.io/UniEnter/
 - **開発を支援**: https://iwai-ddndn.github.io/UniEnter/support.html
 

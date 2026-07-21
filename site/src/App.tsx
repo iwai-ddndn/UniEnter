@@ -96,8 +96,12 @@ const faqs = [
     a: "読みません。判定に使うのはEnter関連のキー・前面アプリ・日本語入力かどうかだけ。外部送信も一切ありません。",
   },
   {
+    q: "インストール方法は?",
+    a: "ダウンロードした UniEnter.pkg をダブルクリックし、インストーラに沿って進めるだけです(アプリケーションフォルダに入ります)。zip版はお好みの場所に解凍して使えます。",
+  },
+  {
     q: "開こうとすると「開発元を確認できない」と警告が出る",
-    a: "現在はApple公証の準備中のため、初回のみ システム設定 → プライバシーとセキュリティ → 下部の「このまま開く」から起動してください。2回目以降は普通に開けます。",
+    a: "現在はApple公証の準備中のため、初回のみ システム設定 → プライバシーとセキュリティ → 下部の「このまま開く」から進めてください。2回目以降は普通に開けます。",
   },
 ]
 
@@ -139,8 +143,8 @@ export default function App() {
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" asChild>
-            <a href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.zip">
-              ダウンロード
+            <a href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg">
+              ダウンロード(.pkg)
             </a>
           </Button>
           <Button size="lg" variant="outline" asChild>
@@ -149,6 +153,13 @@ export default function App() {
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
           macOS 13以降・無料 /{" "}
+          <a
+            className="underline"
+            href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.zip"
+          >
+            zip版
+          </a>{" "}
+          /{" "}
           <a className="underline" href="https://github.com/iwai-ddndn/UniEnter/releases">
             リリース一覧
           </a>
