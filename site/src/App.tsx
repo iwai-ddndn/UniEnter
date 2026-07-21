@@ -96,6 +96,10 @@ const faqs = [
     q: "入力内容を読まれない?",
     a: "読みません。判定に使うのはEnter関連のキー・前面アプリ・日本語入力かどうかだけ。外部送信も一切ありません。",
   },
+  {
+    q: "開こうとすると「開発元を確認できない」と警告が出る",
+    a: "現在はApple公証の準備中のため、初回のみ システム設定 → プライバシーとセキュリティ → 下部の「このまま開く」から起動してください。2回目以降は普通に開けます。",
+  },
 ]
 
 export default function App() {
@@ -106,9 +110,14 @@ export default function App() {
         <span className="flex items-center gap-2 font-semibold">
           <CornerDownLeft className="size-4" /> UniEnter
         </span>
-        <Button variant="outline" size="sm" asChild>
-          <a href="#">GitHub</a>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <a href="./support.html">☕ 支援</a>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <a href="https://github.com/iwai-ddndn/UniEnter">GitHub</a>
+          </Button>
+        </div>
       </nav>
 
       {/* Hero */}
@@ -131,13 +140,20 @@ export default function App() {
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" asChild>
-            <a href="#">ダウンロード</a>
+            <a href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.zip">
+              ダウンロード
+            </a>
           </Button>
           <Button size="lg" variant="outline" asChild>
             <a href="#faq">よくある質問</a>
           </Button>
         </div>
-        <p className="mt-4 text-xs text-muted-foreground">macOS 13以降</p>
+        <p className="mt-4 text-xs text-muted-foreground">
+          macOS 13以降・無料 /{" "}
+          <a className="underline" href="https://github.com/iwai-ddndn/UniEnter/releases">
+            リリース一覧
+          </a>
+        </p>
       </header>
 
       {/* Apps */}
@@ -243,7 +259,27 @@ export default function App() {
         </div>
       </section>
 
+      {/* Support teaser */}
+      <section className="px-6 pb-20">
+        <Card className="mx-auto max-w-xl text-center shadow-sm">
+          <CardContent className="py-8">
+            <h2 className="mb-2 text-lg font-bold">無料で使えます</h2>
+            <p className="mb-5 text-sm text-muted-foreground">
+              役に立ったら、コーヒー1杯分の応援をもらえるとうれしいです。
+            </p>
+            <Button variant="outline" asChild>
+              <a href="./support.html">☕ 開発を支援する</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+
       <footer className="border-t px-6 py-10 text-center text-xs text-muted-foreground">
+        <p className="mb-2 space-x-4">
+          <a className="underline" href="https://github.com/iwai-ddndn/UniEnter">GitHub</a>
+          <a className="underline" href="https://github.com/iwai-ddndn/UniEnter/releases">ダウンロード</a>
+          <a className="underline" href="./support.html">開発を支援</a>
+        </p>
         <p>© 2026 UniEnter</p>
         <p className="mx-auto mt-2 max-w-lg">
           記載の製品名は各社の商標です。本アプリは各社と無関係の個人開発ソフトウェアです。

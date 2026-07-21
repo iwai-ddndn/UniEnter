@@ -1,8 +1,14 @@
 # UniEnter
 
-チャットアプリごとにバラバラな「改行/送信」のEnterキー挙動を統一するmacOSメニューバー常駐アプリ。
+どのアプリでも「改行/送信」のEnterキー挙動を統一するmacOSメニューバー常駐アプリ。
 
 **統一後の挙動: Enter = 改行、⌘Enter = 送信**
+
+- **ダウンロード**: [最新リリース](https://github.com/iwai-ddndn/UniEnter/releases/latest)(macOS 13以降・無料)
+- **紹介ページ**: https://iwai-ddndn.github.io/UniEnter/
+- **開発を支援**: https://iwai-ddndn.github.io/UniEnter/support.html
+
+> 公証(notarization)準備中のため、初回のみ システム設定 → プライバシーとセキュリティ → 「このまま開く」から起動してください。
 
 ## 対象アプリ
 

@@ -10,6 +10,12 @@ export default defineConfig({
   build: {
     outDir: "../docs",
     emptyOutDir: false,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        support: path.resolve(__dirname, "support.html"),
+      },
+    },
   },
   resolve: {
     alias: {
