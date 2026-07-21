@@ -67,6 +67,33 @@ final class WebAppMatcherTests: XCTestCase {
         XCTAssertEqual(match("https://APP.SLACK.COM/client/T1/C1"), "com.tinyspeck.slackmacgap")
     }
 
+    // MARK: - hostOnly(Arcのコマンドバー: ドメインのみ取得できるケース)
+
+    func testHostOnlyRelaxesDiscordPathRequirement() {
+        let url = URL(string: "https://discord.com/")!
+        XCTAssertEqual(WebAppMatcher.serviceBundleID(for: url, hostOnly: true), "com.hnc.Discord")
+        XCTAssertNil(WebAppMatcher.serviceBundleID(for: url, hostOnly: false))
+    }
+
+    func testHostOnlyRelaxesChatworkFragmentRequirement() {
+        let url = URL(string: "https://www.chatwork.com/")!
+        XCTAssertEqual(WebAppMatcher.serviceBundleID(for: url, hostOnly: true), "com.electron.chatwork")
+        XCTAssertNil(WebAppMatcher.serviceBundleID(for: url, hostOnly: false))
+    }
+
+    func testHostOnlyStillRejectsUnrelatedHosts() {
+        let url = URL(string: "https://slack.com/")!
+        XCTAssertNil(WebAppMatcher.serviceBundleID(for: url, hostOnly: true))
+    }
+
+    func testArcCommandBarValueMatchesEndToEnd() {
+        // Arcのコマンドバーはホスト名のみ(例: "app.slack.com")
+        guard let url = WebAppMatcher.normalizedURL(from: "app.slack.com") else {
+            return XCTFail("URL正規化に失敗")
+        }
+        XCTAssertEqual(WebAppMatcher.serviceBundleID(for: url, hostOnly: true), "com.tinyspeck.slackmacgap")
+    }
+
     // MARK: - omnibox正規化
 
     func testNormalizedURLAddsScheme() {

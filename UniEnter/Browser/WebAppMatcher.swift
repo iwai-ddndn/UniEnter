@@ -24,7 +24,10 @@ enum BrowserRegistry {
 /// アプリ別チェックボックスにそのまま連動させる。
 enum WebAppMatcher {
 
-    static func serviceBundleID(for url: URL) -> String? {
+    /// - Parameter hostOnly: URLの取得元がホスト名しか持たない場合(Arcのコマンドバー等)は
+    ///   true。パス/フラグメントでの絞り込みを緩和する。誤って緩く判定しても結果は
+    ///   「Enter=改行」側なので誤送信方向には倒れない。
+    static func serviceBundleID(for url: URL, hostOnly: Bool = false) -> String? {
         guard let host = url.host?.lowercased() else { return nil }
         switch host {
         case "app.slack.com":
@@ -34,9 +37,11 @@ enum WebAppMatcher {
             return "com.microsoft.teams2"
         case "discord.com", "ptb.discord.com", "canary.discord.com":
             // discord.com ルートはマーケティングサイトのためパスで判定
+            if hostOnly { return "com.hnc.Discord" }
             return url.path.hasPrefix("/channels") ? "com.hnc.Discord" : nil
         case "www.chatwork.com":
             // チャット画面は #!rid{数字}。ログインページ等でフォーム送信のEnterを壊さない
+            if hostOnly { return "com.electron.chatwork" }
             return (url.fragment?.hasPrefix("!rid") ?? false) ? "com.electron.chatwork" : nil
         default:
             return nil

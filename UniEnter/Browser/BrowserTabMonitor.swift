@@ -134,24 +134,51 @@ final class BrowserTabMonitor {
             return nil
         }
 
-        let url: URL?
+        var url: URL?
+        var hostOnly = false
         switch kind {
         case .safari:
             url = findWebAreaURL(in: window)
         case .chromium:
             // レンダラ側AXの有効化(AXEnhancedUserInterface)はウィンドウ操作を壊す
             // 既知の副作用があるため使わず、常時公開されるアドレスバーの値を読む。
-            // Arc等アドレスバーが露出しないUIでは、AXWebArea(レンダラAXが有効な
-            // 環境でのみ存在)のAXURLをフォールバックとして試す。
-            url = findOmniboxURL(in: window) ?? findWebAreaURL(in: window)
+            url = findOmniboxURL(in: window)
+            if url == nil, let hostURL = findArcCommandBarURL(in: window) {
+                // Arcはアドレスバーが無く、コマンドバーの静的テキストにドメインのみ露出する
+                url = hostURL
+                hostOnly = true
+            }
+            if url == nil {
+                // レンダラAXが有効な環境ではAXWebAreaのAXURLが取れることがある
+                url = findWebAreaURL(in: window)
+            }
         }
         guard let url else {
             evalLog.notice("eval pid=\(pid): url not found (kind=\(String(describing: kind), privacy: .public))")
             return nil
         }
-        let service = WebAppMatcher.serviceBundleID(for: url)
-        evalLog.notice("eval pid=\(pid): url=\(url.host ?? "?", privacy: .public)\(url.path, privacy: .public) -> \(service ?? "no match", privacy: .public)")
+        let service = WebAppMatcher.serviceBundleID(for: url, hostOnly: hostOnly)
+        evalLog.notice("eval pid=\(pid): url=\(url.host ?? "?", privacy: .public)\(url.path, privacy: .public) hostOnly=\(hostOnly) -> \(service ?? "no match", privacy: .public)")
         return service
+    }
+
+    /// Arc: ウィンドウ直下の浅い階層にある `commandBarPlaceholderTextField`
+    /// (AXStaticText、値は表示中ページのホスト名のみ)を読む。
+    private static func findArcCommandBarURL(in window: AXUIElement) -> URL? {
+        var visited = 0
+        func search(_ element: AXUIElement, depth: Int) -> URL? {
+            guard visited < 120, depth <= 3 else { return nil }
+            visited += 1
+            if copyString(element, "AXIdentifier") == "commandBarPlaceholderTextField",
+               let value = copyString(element, kAXValueAttribute) {
+                return WebAppMatcher.normalizedURL(from: value)
+            }
+            for child in children(of: element) {
+                if let url = search(child, depth: depth + 1) { return url }
+            }
+            return nil
+        }
+        return search(window, depth: 0)
     }
 
     /// フォーカス要素がブラウザ自身のUI(アドレスバー・検索バー等)のテキスト欄か。
