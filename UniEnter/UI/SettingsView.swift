@@ -4,17 +4,20 @@ final class SettingsViewModel: ObservableObject {
     @Published var enabledBundleIDs: Set<String>
     @Published var launchAtLogin: Bool
     @Published var browserSupport: Bool
+    @Published var cmdEnterSendApps: Set<String>
 
     private let store: SettingsStore
     /// 有効アプリ集合が変わったときにAppDelegateへ伝える
     var onEnabledAppsChange: ((Set<String>) -> Void)?
     var onBrowserSupportChange: ((Bool) -> Void)?
+    var onCmdEnterSendAppsChange: ((Set<String>) -> Void)?
 
     init(store: SettingsStore) {
         self.store = store
         self.enabledBundleIDs = store.enabledBundleIDs
         self.launchAtLogin = store.launchAtLogin
         self.browserSupport = store.browserSupportEnabled
+        self.cmdEnterSendApps = store.cmdEnterSendApps
     }
 
     func isEnabled(_ app: TargetApp) -> Binding<Bool> {
@@ -43,6 +46,22 @@ final class SettingsViewModel: ObservableObject {
         store.browserSupportEnabled = value
         onBrowserSupportChange?(value)
     }
+
+    /// アプリ側の送信キー("Enter" or "⌘Enter")のバインディング
+    func sendKey(_ app: TargetApp) -> Binding<String> {
+        Binding(
+            get: { self.cmdEnterSendApps.contains(app.bundleID) ? "⌘Enter" : "Enter" },
+            set: { value in
+                if value == "⌘Enter" {
+                    self.cmdEnterSendApps.insert(app.bundleID)
+                } else {
+                    self.cmdEnterSendApps.remove(app.bundleID)
+                }
+                self.store.cmdEnterSendApps = self.cmdEnterSendApps
+                self.onCmdEnterSendAppsChange?(self.cmdEnterSendApps)
+            }
+        )
+    }
 }
 
 struct SettingsView: View {
@@ -58,10 +77,24 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(AppRegistry.all, id: \.bundleID) { app in
-                    Toggle(app.name, isOn: model.isEnabled(app))
+                    HStack {
+                        Toggle(app.name, isOn: model.isEnabled(app))
+                        Spacer()
+                        Picker("", selection: model.sendKey(app)) {
+                            Text("Enter").tag("Enter")
+                            Text("⌘Enter").tag("⌘Enter")
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                        .disabled(!model.enabledBundleIDs.contains(app.bundleID))
+                    }
                 }
             }
             .padding(.leading, 4)
+
+            Text("右はアプリ側で設定している送信キー。アプリ側を「⌘Enterで送信(Enterで改行)」にしている場合は ⌘Enter を選ぶと、そのアプリでは書き換えを行いません(既に Enter=改行/⌘Enter=送信 のため)。")
+                .font(.caption)
+                .foregroundColor(.secondary)
 
             Divider()
 

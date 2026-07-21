@@ -19,6 +19,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 書き換えを有効にするbundle IDの集合(UserDefaultsから読込・設定UIで更新)
     private var enabledBundleIDs: Set<String> = []
+    /// アプリ側の送信キーが⌘Enter(=既に統一挙動)のアプリ。書き換えを行わない
+    private var cmdEnterSendApps: Set<String> = []
     /// 前面アプリ(NSWorkspace通知でキャッシュ)
     private var frontmostApp: NSRunningApplication?
     /// 前面ブラウザが対象サービスのWeb版を開いているとき、対応するアプリのbundle ID
@@ -26,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         enabledBundleIDs = settingsStore.enabledBundleIDs
+        cmdEnterSendApps = settingsStore.cmdEnterSendApps
         setupStatusItem()
         observeWorkspace()
 
@@ -198,10 +201,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func recomputeTarget() {
         let nativeID = frontmostApp?.bundleIdentifier.flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
         let webID = webServiceBundleID.flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
-        engine.frontmostChanged(isTarget: nativeID != nil || webID != nil)
+
+        // アプリ側の送信キーが⌘Enterのアプリは既に統一挙動なので書き換えない。
+        // (Web版はワークスペース/アカウントごとに設定が独立しているため対象外にしない)
+        let nativeNeedsRemap = nativeID.map { !cmdEnterSendApps.contains($0) } ?? false
+        engine.frontmostChanged(isTarget: nativeNeedsRemap || webID != nil)
 
         if let id = nativeID {
-            currentTargetLabel = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
+            let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
+            currentTargetLabel = cmdEnterSendApps.contains(id) ? "\(name)(⌘Enter送信設定・素通し)" : name
         } else if let id = webID {
             let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
             currentTargetLabel = "\(name) (Web)"
@@ -253,6 +261,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             model.onBrowserSupportChange = { [weak self] enabled in
                 self?.browserMonitor.isEnabled = enabled
+            }
+            model.onCmdEnterSendAppsChange = { [weak self] ids in
+                self?.cmdEnterSendApps = ids
+                self?.recomputeTarget()
             }
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: model)))
             window.title = "UniEnter 設定"

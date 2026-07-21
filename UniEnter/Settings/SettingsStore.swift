@@ -20,6 +20,15 @@ final class SettingsStore {
         }
     }
 
+    private static let cmdEnterSendAppsKey = "cmdEnterSendApps"
+
+    /// アプリ側の設定で「送信キー=⌘Enter(Enterは改行)」になっているアプリの集合。
+    /// これらは既に統一挙動(Enter=改行/⌘Enter=送信)なので書き換えを行わない。
+    var cmdEnterSendApps: Set<String> {
+        get { Set(defaults.stringArray(forKey: Self.cmdEnterSendAppsKey) ?? []) }
+        set { defaults.set(Array(newValue).sorted(), forKey: Self.cmdEnterSendAppsKey) }
+    }
+
     private static let browserSupportKey = "browserSupportEnabled"
 
     /// ブラウザ(Safari/Chrome系)で対象サービスのWeb版を開いているときも書き換えるか。既定ON。
