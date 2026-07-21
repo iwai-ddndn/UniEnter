@@ -6,8 +6,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    CODE_SIGN_STYLE: Automatic
-    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    # Apple Development証明書(ハッシュ指定)。ad-hoc署名("-")はビルドごとに
+    # 署名が変わりTCC(アクセシビリティ許可)が無効化されるため使わない。
+    CODE_SIGN_IDENTITY: "D24D0257C11BEBF3858CF1A8755F6A5D8E41BF9D"
 targets:
   UniEnter:
     type: application
