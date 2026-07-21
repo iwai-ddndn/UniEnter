@@ -183,6 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateFrontmost(_ app: NSRunningApplication?) {
         frontmostApp = app
+        log.notice("frontmost: \(app?.bundleIdentifier ?? "nil", privacy: .public)")
         browserMonitor.frontmostChanged(app)
         recomputeTarget()
         // 通知取りこぼしに備えて入力ソースも同期し直す
@@ -233,6 +234,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let settingsItem = NSMenuItem(title: "設定…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
+        let diagItem = NSMenuItem(title: "ブラウザ判定を診断(ログ出力)", action: #selector(dumpBrowserDiagnostics), keyEquivalent: "")
+        diagItem.target = self
+        menu.addItem(diagItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "UniEnterを終了", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -259,6 +263,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func dumpBrowserDiagnostics() {
+        browserMonitor.dumpDiagnostics()
     }
 
     @objc private func toggleEnabled() {

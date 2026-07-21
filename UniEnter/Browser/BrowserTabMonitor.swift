@@ -140,8 +140,10 @@ final class BrowserTabMonitor {
             url = findWebAreaURL(in: window)
         case .chromium:
             // レンダラ側AXの有効化(AXEnhancedUserInterface)はウィンドウ操作を壊す
-            // 既知の副作用があるため使わず、常時公開されるアドレスバーの値を読む
-            url = findOmniboxURL(in: window)
+            // 既知の副作用があるため使わず、常時公開されるアドレスバーの値を読む。
+            // Arc等アドレスバーが露出しないUIでは、AXWebArea(レンダラAXが有効な
+            // 環境でのみ存在)のAXURLをフォールバックとして試す。
+            url = findOmniboxURL(in: window) ?? findWebAreaURL(in: window)
         }
         guard let url else {
             evalLog.notice("eval pid=\(pid): url not found (kind=\(String(describing: kind), privacy: .public))")
@@ -207,6 +209,58 @@ final class BrowserTabMonitor {
             return nil
         }
         return search(window, depth: 0)
+    }
+
+    // MARK: - 診断
+
+    /// 前面ブラウザのAXツリーをログへダンプする(メニューから手動実行する調査用)。
+    func dumpDiagnostics() {
+        guard let front = frontBrowser else {
+            Self.evalLog.notice("diag: no front browser")
+            return
+        }
+        axQueue.async { Self.dumpTree(pid: front.pid) }
+    }
+
+    private static func dumpTree(pid: pid_t) {
+        let app = AXUIElementCreateApplication(pid)
+        if let focused = copyElement(app, kAXFocusedUIElementAttribute) {
+            evalLog.notice("diag focused: \(describe(focused), privacy: .public)")
+        }
+        guard let window = copyElement(app, kAXFocusedWindowAttribute)
+                ?? copyElement(app, kAXMainWindowAttribute) else {
+            evalLog.notice("diag: no window")
+            return
+        }
+        var count = 0
+        func walk(_ element: AXUIElement, _ depth: Int) {
+            guard count < 300, depth < 9 else { return }
+            count += 1
+            let indent = String(repeating: "| ", count: depth)
+            evalLog.notice("diag \(indent, privacy: .public)\(describe(element), privacy: .public)")
+            for child in children(of: element) { walk(child, depth + 1) }
+        }
+        walk(window, 0)
+        evalLog.notice("diag: dumped \(count) nodes")
+    }
+
+    private static func describe(_ element: AXUIElement) -> String {
+        var parts: [String] = [role(of: element) ?? "?"]
+        if let sub = copyString(element, kAXSubroleAttribute) { parts.append("sub=\(sub)") }
+        if let id = copyString(element, "AXIdentifier") { parts.append("id=\(id)") }
+        if let title = copyString(element, kAXTitleAttribute), !title.isEmpty {
+            parts.append("title=\(String(title.prefix(40)))")
+        }
+        if let desc = copyString(element, kAXDescriptionAttribute), !desc.isEmpty {
+            parts.append("desc=\(String(desc.prefix(40)))")
+        }
+        if let value = copyString(element, kAXValueAttribute), !value.isEmpty {
+            parts.append("value=\(String(value.prefix(60)))")
+        }
+        if let url = copyURL(element, "AXURL") {
+            parts.append("url=\(String(url.absoluteString.prefix(60)))")
+        }
+        return parts.joined(separator: " ")
     }
 
     // MARK: - AXヘルパー
