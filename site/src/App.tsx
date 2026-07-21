@@ -9,38 +9,18 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CornerDownLeft, Feather, Globe, Languages } from "lucide-react"
 
-function Key({ children, wide }: { children: React.ReactNode; wide?: boolean }) {
+function HeroVisual() {
   return (
-    <span
-      className={`inline-flex items-center justify-center rounded-xl border-2 border-[#3a4a63] bg-gradient-to-b from-[#232c3b] to-[#1a2230] font-semibold text-foreground shadow-lg ${
-        wide ? "min-w-28 px-6" : "min-w-16 px-4"
-      } h-16 text-2xl`}
-    >
-      {children}
-    </span>
-  )
-}
-
-function KeyRow({
-  keys,
-  result,
-  resultClass,
-}: {
-  keys: string[]
-  result: string
-  resultClass: string
-}) {
-  return (
-    <div className="flex items-center justify-center gap-4">
-      <div className="flex gap-2">
-        {keys.map((k) => (
-          <Key key={k} wide={k === "Enter"}>
-            {k}
-          </Key>
-        ))}
+    <div className="relative mx-auto mt-12 max-w-3xl overflow-hidden rounded-2xl border border-border/60 shadow-2xl">
+      <img
+        src="./assets/hero.png"
+        alt="Enterキーは改行、⌘Enterキーは送信"
+        className="block w-full"
+      />
+      <div className="absolute inset-x-0 bottom-[7%] flex text-lg font-bold sm:text-2xl">
+        <p className="w-1/2 text-center text-[#7ee2a8]">Enter → 改行</p>
+        <p className="w-1/2 text-center text-[#6ea8ff]">⌘Enter → 送信</p>
       </div>
-      <span className="text-2xl text-muted-foreground">→</span>
-      <span className={`text-4xl font-bold ${resultClass}`}>{result}</span>
     </div>
   )
 }
@@ -120,10 +100,7 @@ export default function App() {
           バラバラなEnterの挙動を、ぜんぶ同じに。
         </p>
 
-        <div className="mt-12 space-y-6">
-          <KeyRow keys={["Enter"]} result="改行" resultClass="text-[#7ee2a8]" />
-          <KeyRow keys={["⌘", "Enter"]} result="送信" resultClass="text-[#4f8ef7]" />
-        </div>
+        <HeroVisual />
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" asChild>
