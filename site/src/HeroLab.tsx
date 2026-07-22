@@ -264,52 +264,108 @@ function VariantD() {
   )
 }
 
-/* 案E: 3アプリ同時デモ + キー押下(案B+案Cの統合) */
+/* 案E: 3アプリ同時デモ + キー押下(案B+案Cの統合)。
+   3窓は「別アプリであること」が一目で分かるよう、スレッド型/ダーク/吹き出し型に作り分ける */
 type Demo = ReturnType<typeof useChatDemo>
 
-const miniApps = [
-  { name: "Slack", hex: "4A154B", initial: "S", incoming: "例の資料、今日もらえそう?" },
-  { name: "ChatGPT", hex: "10A37F", initial: "G", incoming: "なんでもご相談ください。" },
-  { name: "LINE", hex: "06C755", initial: "L", incoming: "この前の写真送るね📷" },
-]
-
-function MiniChatWindow({
-  app,
-  demo,
-}: {
-  app: (typeof miniApps)[number]
-  demo: Demo
-}) {
+/* Slack風: ライト・スレッド型(フラットな行 + アバター + 名前) */
+function MiniSlack({ demo }: { demo: Demo }) {
   return (
-    <div className="overflow-hidden rounded-lg border bg-card text-left shadow-sm">
-      <div className="flex items-center gap-1.5 border-b bg-muted px-3 py-1.5">
-        <span
-          className="flex size-4 shrink-0 items-center justify-center rounded"
-          style={{ backgroundColor: `#${app.hex}` }}
-        >
-          <span className="text-[9px] leading-none font-bold text-white">{app.initial}</span>
-        </span>
-        <span className="truncate text-[11px] text-muted-foreground">{app.name}</span>
+    <div className="overflow-hidden rounded-lg border bg-white text-left shadow-sm">
+      <div className="flex items-center gap-1.5 border-b px-3 py-1.5" style={{ backgroundColor: "#4A154B" }}>
+        <span className="text-[11px] font-semibold text-white"># 進行中プロジェクト</span>
       </div>
-      <div className="space-y-2 p-2.5">
-        <div className="flex justify-start">
-          <div className="max-w-[90%] rounded-xl rounded-tl-sm bg-muted px-2.5 py-1.5 text-[11px]">
-            {app.incoming}
+      <div className="p-2.5">
+        <div className="flex items-start gap-1.5">
+          <span className="mt-0.5 size-5 shrink-0 rounded bg-[#e0b64f]" />
+          <div className="min-w-0">
+            <p className="text-[11px] leading-tight font-bold">田中</p>
+            <p className="text-[11px]">例の資料、今日もらえそう?</p>
           </div>
         </div>
-        <div className="h-16 space-y-1 overflow-hidden">
+        <div className="mt-1.5 h-16 overflow-hidden">
+          {demo.sent.map((m) => (
+            <div key={m} className="flex items-start gap-1.5">
+              <span className="mt-0.5 size-5 shrink-0 rounded bg-[#7fb4a2]" />
+              <div className="min-w-0">
+                <p className="text-[11px] leading-tight font-bold">あなた</p>
+                <p className="text-[11px] whitespace-pre-line">{m}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="min-h-12 rounded-md border border-[#c9c9c9] px-2 py-1.5 text-[11px] whitespace-pre-line">
+          {demo.input}
+          <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-foreground align-middle" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ChatGPT風: ダークモード・AIチャット型 */
+function MiniDarkAI({ demo }: { demo: Demo }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-[#3a3a3a] bg-[#212121] text-left text-white shadow-sm">
+      <div className="flex items-center gap-1.5 border-b border-[#3a3a3a] px-3 py-1.5">
+        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
+          <span className="text-[9px] leading-none font-bold text-black">✳</span>
+        </span>
+        <span className="truncate text-[11px] text-neutral-300">ChatGPT</span>
+      </div>
+      <div className="p-2.5">
+        <p className="text-[11px] text-neutral-200">なんでもご相談ください。</p>
+        <div className="mt-1.5 h-16 space-y-1 overflow-hidden">
+          {demo.sent.map((m) => (
+            <div key={m} className="flex justify-end">
+              <div className="max-w-[90%] rounded-xl rounded-br-sm bg-[#3a3a3a] px-2.5 py-1.5 text-[11px] whitespace-pre-line">
+                {m}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="min-h-12 rounded-xl border border-[#4a4a4a] bg-[#2f2f2f] px-2 py-1.5 text-[11px] whitespace-pre-line">
+          {demo.input}
+          <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-white align-middle" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* LINE風: 吹き出し型・青グレー背景に緑バブル */
+function MiniLine({ demo }: { demo: Demo }) {
+  return (
+    <div className="overflow-hidden rounded-lg border text-left shadow-sm">
+      <div className="flex items-center gap-1.5 border-b bg-white px-3 py-1.5">
+        <span
+          className="flex size-4 shrink-0 items-center justify-center rounded"
+          style={{ backgroundColor: "#06C755" }}
+        >
+          <span className="text-[9px] leading-none font-bold text-white">L</span>
+        </span>
+        <span className="truncate text-[11px] text-muted-foreground">ゆうこ</span>
+      </div>
+      <div className="bg-[#dce4f0] p-2.5">
+        <div className="flex items-end gap-1">
+          <span className="size-5 shrink-0 rounded-full bg-[#c9a2d8]" />
+          <div className="max-w-[85%] rounded-xl rounded-bl-sm bg-white px-2.5 py-1.5 text-[11px]">
+            この前の写真送るね📷
+          </div>
+        </div>
+        <div className="mt-1.5 h-16 space-y-1 overflow-hidden">
           {demo.sent.map((m) => (
             <div key={m} className="flex justify-end">
               <div
-                className="max-w-[90%] rounded-xl rounded-br-sm px-2.5 py-1.5 text-[11px] whitespace-pre-line text-white"
-                style={{ backgroundColor: SEND }}
+                className="max-w-[85%] rounded-xl rounded-br-sm px-2.5 py-1.5 text-[11px] whitespace-pre-line text-white"
+                style={{ backgroundColor: "#06C755" }}
               >
                 {m}
               </div>
             </div>
           ))}
         </div>
-        <div className="min-h-12 rounded-md border bg-background px-2 py-1.5 text-[11px] whitespace-pre-line">
+        <div className="min-h-12 rounded-full border bg-white px-3 py-1.5 text-[11px] whitespace-pre-line">
           {demo.input}
           <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-foreground align-middle" />
         </div>
@@ -323,9 +379,9 @@ function VariantE() {
   return (
     <div className="mx-auto max-w-3xl rounded-xl border bg-muted p-5">
       <div className="grid grid-cols-3 gap-3">
-        {miniApps.map((app) => (
-          <MiniChatWindow key={app.name} app={app} demo={demo} />
-        ))}
+        <MiniSlack demo={demo} />
+        <MiniDarkAI demo={demo} />
+        <MiniLine demo={demo} />
       </div>
       <div className="mt-6 flex items-center justify-center gap-3">
         <BigKey label="⌘" active={demo.pressed === "cmd"} />
