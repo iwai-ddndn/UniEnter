@@ -96,6 +96,18 @@ const faqs = [
     a: "読みません。判定に使うのはEnter関連のキー・前面アプリ・日本語入力かどうかだけ。外部送信も一切ありません。",
   },
   {
+    q: "無料トライアルが終わるとどうなる?",
+    a: "キーの書き換えが停止します(アプリの動作を邪魔することはありません)。ライセンスを購入してキーを入力すると再開されます。",
+  },
+  {
+    q: "支払い方法と領収書は?",
+    a: "決済代行のPaddle経由で、クレジットカード等が使えます。領収書・インボイスはPaddleから発行されます。",
+  },
+  {
+    q: "何台のMacで使える?",
+    a: "ご本人が使うMacであれば複数台で利用できます。ライセンスキーを各Macで入力してください。",
+  },
+  {
     q: "インストール方法は?",
     a: "ダウンロードした UniEnter.pkg をダブルクリックし、インストーラに沿って進めるだけです(アプリケーションフォルダに入ります)。zip版はお好みの場所に解凍して使えます。",
   },
@@ -115,7 +127,7 @@ export default function App() {
         </span>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
-            <a href="./support.html">☕ 支援</a>
+            <a href="#pricing">価格</a>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <a href="https://github.com/iwai-ddndn/UniEnter">GitHub</a>
@@ -126,7 +138,7 @@ export default function App() {
       {/* Hero */}
       <header className="px-6 pt-16 pb-20 text-center">
         <Badge variant="secondary" className="mb-6 font-normal text-muted-foreground">
-          macOS用メニューバーアプリ・無料
+          macOS用メニューバーアプリ・14日間無料トライアル
         </Badge>
         <h1 className="text-3xl leading-snug font-bold sm:text-5xl sm:leading-snug">
           どのアプリでも、
@@ -144,15 +156,15 @@ export default function App() {
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" asChild>
             <a href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg">
-              ダウンロード(.pkg)
+              無料で試す(.pkg)
             </a>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <a href="#faq">よくある質問</a>
+            <a href="#pricing">価格を見る</a>
           </Button>
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
-          macOS 13以降・無料 /{" "}
+          macOS 13以降・14日間は全機能無料 /{" "}
           <a
             className="underline"
             href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.zip"
@@ -253,6 +265,43 @@ export default function App() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="border-t px-6 py-20">
+        <div className="mx-auto max-w-xl">
+          <h2 className="mb-3 text-center text-2xl font-bold sm:text-3xl">価格</h2>
+          <p className="mx-auto mb-10 max-w-md text-center text-muted-foreground">
+            まずは14日間、全機能を無料で。気に入ったら買い切りで、ずっと。
+          </p>
+          <Card className="shadow-sm">
+            <CardContent className="py-8 text-center">
+              <p className="text-4xl font-bold">
+                ¥1,480 <span className="text-base font-normal text-muted-foreground">(税込)</span>
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">買い切り・サブスクなし</p>
+              <ul className="mx-auto mt-6 max-w-xs space-y-2 text-left text-sm text-muted-foreground">
+                <li>✓ 14日間の無料トライアル付き(全機能)</li>
+                <li>✓ すべての対象アプリ・ブラウザWeb版</li>
+                <li>✓ アップデート込み</li>
+                <li>✓ 同一ユーザーのMac複数台で利用OK</li>
+              </ul>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Button size="lg" asChild>
+                  <a href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg">
+                    無料で試す
+                  </a>
+                </Button>
+                <Button size="lg" variant="outline" disabled>
+                  ライセンスを購入(準備中)
+                </Button>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground">
+                決済は Paddle(海外製アプリで標準の決済代行)経由。カード情報が開発者に渡ることはありません。
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
       {/* FAQ */}
       <section id="faq" className="border-t bg-muted/50 px-6 py-20">
         <div className="mx-auto max-w-xl">
@@ -270,26 +319,11 @@ export default function App() {
         </div>
       </section>
 
-      {/* Support teaser */}
-      <section className="px-6 pb-20">
-        <Card className="mx-auto max-w-xl text-center shadow-sm">
-          <CardContent className="py-8">
-            <h2 className="mb-2 text-lg font-bold">無料で使えます</h2>
-            <p className="mb-5 text-sm text-muted-foreground">
-              役に立ったら、コーヒー1杯分の応援をもらえるとうれしいです。
-            </p>
-            <Button variant="outline" asChild>
-              <a href="./support.html">☕ 開発を支援する</a>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
-
       <footer className="border-t px-6 py-10 text-center text-xs text-muted-foreground">
         <p className="mb-2 space-x-4">
           <a className="underline" href="https://github.com/iwai-ddndn/UniEnter">GitHub</a>
           <a className="underline" href="https://github.com/iwai-ddndn/UniEnter/releases">ダウンロード</a>
-          <a className="underline" href="./support.html">開発を支援</a>
+          <a className="underline" href="#pricing">価格</a>
         </p>
         <p>
           © 2026 octo — お問い合わせ:{" "}

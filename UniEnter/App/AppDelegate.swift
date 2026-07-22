@@ -13,9 +13,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let inputSourceMonitor = InputSourceMonitor()
     private let browserMonitor = BrowserTabMonitor()
     private let settingsStore = SettingsStore()
+    private let licenseManager = LicenseManager()
     private var permissionTimer: Timer?
+    private var entitlementTimer: Timer?
     private var settingsWindow: NSWindow?
     private var onboardingWindow: NSWindow?
+    private var licenseWindow: NSWindow?
+
+    /// トライアル/ライセンスが有効か(コールバックはこのキャッシュのみ参照)
+    private var isEntitled = true
 
     /// 書き換えを有効にするbundle IDの集合(UserDefaultsから読込・設定UIで更新)
     private var enabledBundleIDs: Set<String> = []
@@ -48,11 +54,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.handleEvent(type: type, event: event) ?? event
         }
         startTapWhenPermitted()
+
+        refreshEntitlement()
+        // 日付が変わってもトライアル残日数・期限切れが反映されるよう定期更新
+        entitlementTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            self?.refreshEntitlement()
+        }
+        if case .expired = licenseManager.state {
+            openLicense()
+        }
+    }
+
+    private func refreshEntitlement() {
+        isEntitled = licenseManager.isEntitled
+        updateStatusUI()
     }
 
     // MARK: - Event handling
 
     private func handleEvent(type: CGEventType, event: CGEvent) -> CGEvent? {
+        // トライアル終了かつ未購入の間は一切書き換えない
+        guard isEntitled else { return event }
         switch type {
         case .leftMouseDown:
             engine.mouseDown()
@@ -244,6 +266,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let settingsItem = NSMenuItem(title: "設定…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
+        let licenseItem = NSMenuItem(title: "ライセンス…", action: #selector(openLicense), keyEquivalent: "")
+        licenseItem.target = self
+        menu.addItem(licenseItem)
         let diagItem = NSMenuItem(title: "ブラウザ判定を診断(ログ出力)", action: #selector(dumpBrowserDiagnostics), keyEquivalent: "")
         diagItem.target = self
         menu.addItem(diagItem)
@@ -279,6 +304,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    @objc private func openLicense() {
+        if licenseWindow == nil {
+            let model = LicenseViewModel(manager: licenseManager)
+            model.onActivated = { [weak self] in
+                self?.refreshEntitlement()
+            }
+            let window = NSWindow(contentViewController: NSHostingController(rootView: LicenseView(model: model)))
+            window.title = "UniEnter ライセンス"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            licenseWindow = window
+        }
+        licenseWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     @objc private func dumpBrowserDiagnostics() {
         browserMonitor.dumpDiagnostics()
     }
@@ -295,12 +337,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusMenuLine.title = "アクセシビリティ権限が必要です"
             statusItem.button?.image = NSImage(systemSymbolName: "exclamationmark.triangle",
                                               accessibilityDescription: "権限が必要")
+        } else if !isEntitled {
+            statusMenuLine.title = "トライアル終了 — 書き換え停止中(ライセンス…から購入)"
+            statusItem.button?.image = NSImage(systemSymbolName: "exclamationmark.triangle",
+                                              accessibilityDescription: "トライアル終了")
         } else if tapManager.isRunning {
+            var title: String
             if let label = currentTargetLabel {
-                statusMenuLine.title = "動作中 — 対象: \(label)"
+                title = "動作中 — 対象: \(label)"
             } else {
-                statusMenuLine.title = "動作中 — 前面は対象外"
+                title = "動作中 — 前面は対象外"
             }
+            if case .trial(let daysLeft) = licenseManager.state {
+                title += "(試用あと\(daysLeft)日)"
+            }
+            statusMenuLine.title = title
             statusItem.button?.image = NSImage(systemSymbolName: "return",
                                               accessibilityDescription: "UniEnter")
         } else {
