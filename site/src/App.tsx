@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CornerDownLeft, Lock } from "lucide-react"
+import { BrandChip, desktopBrands, webOnlyBrands } from "./brands"
 
 /* 改行=グリーン / 送信=ブルー(Notion系の落ち着いた色) */
 const NEWLINE = "#0f7b6c"
@@ -68,15 +69,7 @@ function UrlRow({ url, active }: { url: string; active: boolean }) {
   )
 }
 
-const desktopApps = [
-  "Slack",
-  "Microsoft Teams",
-  "Discord",
-  "LINE",
-  "ChatGPT",
-  "Claude",
-  "Messenger",
-]
+// (対応アプリのロゴ/名称は brands.tsx に集約)
 
 const faqs = [
   {
@@ -195,15 +188,12 @@ export default function App() {
           <div className="grid gap-5 sm:grid-cols-2">
             <WindowMock title="デスクトップアプリ">
               <div className="flex flex-wrap gap-2">
-                {desktopApps.map((app) => (
-                  <Badge key={app} variant="secondary" className="px-3 py-1.5 text-sm font-normal">
-                    {app}
-                  </Badge>
+                {desktopBrands.map((brand) => (
+                  <BrandChip key={brand.name} brand={brand} />
                 ))}
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
-                設定のチェックボックスでアプリごとにオン/オフできます。
-                XとInstagramのDM・GeminiはWeb版で対応。
+                設定のチェックボックスでアプリごとにオン/オフできます
               </p>
             </WindowMock>
             <WindowMock title="ブラウザ — Safari / Chrome / Edge / Arc など">
@@ -213,6 +203,14 @@ export default function App() {
                 <UrlRow url="x.com/messages(DM)" active />
                 <UrlRow url="example.com" active={false} />
               </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {webOnlyBrands.map((brand) => (
+                  <BrandChip key={brand.name} brand={brand} />
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Gemini・X・InstagramのDMはWeb版で対応
+              </p>
             </WindowMock>
           </div>
         </div>

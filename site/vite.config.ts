@@ -14,6 +14,7 @@ export default defineConfig({
       input: {
         main: path.resolve(__dirname, "index.html"),
         support: path.resolve(__dirname, "support.html"),
+        "hero-lab": path.resolve(__dirname, "hero-lab.html"),
       },
     },
   },
