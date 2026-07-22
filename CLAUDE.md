@@ -61,10 +61,10 @@ cd site && npm run build
 
 ## 公開状態(重要)
 
-- **GitHubリポジトリ(iwai-ddndn/UniEnter)は現在private・GitHub Pagesは停止中**。ユーザーが「公開して」と言うまで公開しない
-- 公開するとき: `scripts/release.sh` で成果物生成 → `scripts/publish.sh` を実行(public化+Pages+リリース添付)
-- リリースはv0.2.0(pkg+zip)をステージング済み。コミットメールはGitHub noreplyに統一済み(個人メールをコミットに入れない)
-- 公開URL(公開後): LP https://iwai-ddndn.github.io/UniEnter/ / リリース https://github.com/iwai-ddndn/UniEnter/releases
+- **2026-07-22に公開済み**: リポジトリpublic・GitHub Pages有効・リリースv0.2.0(pkg+zip)添付済み
+- LP: https://iwai-ddndn.github.io/UniEnter/(利用規約 terms.html / プライバシーポリシー privacy.html も公開済み)
+- リリース: https://github.com/iwai-ddndn/UniEnter/releases
+- コミットメールはGitHub noreplyに統一済み(個人メールをコミットに入れない)。再リリース時は `scripts/release.sh` → `scripts/publish.sh`
 
 ## LP(site/)の約束事
 
@@ -77,6 +77,7 @@ cd site && npm run build
 ## 残タスク(2026-07-22時点)
 
 1. Paddleアカウント・商品・チェックアウトURL(ユーザー作業)→ 購入ボタン有効化
+   - キー自動発行のCloudflare Workerは `license-signing/worker/` に実装済み(署名互換をCryptoKitで検証済み)。Paddleアカウント作成後に `worker/README.md` の手順でデプロイ
 2. Apple Developer Program加入(ユーザー作業)→ Developer ID署名+公証+Sparkle自動アップデート
 3. アプリアイコン: ChatGPT生成のダーク版のみ存在。ライト版再生成の指示が保留中。Assets.xcassets組み込みも未実施
 4. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
