@@ -19,12 +19,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindow: NSWindow?
     private var onboardingWindow: NSWindow?
     private var licenseWindow: NSWindow?
+    private var tutorialWindow: NSWindow?
 
     /// トライアル/ライセンスが有効か(コールバックはこのキャッシュのみ参照)
     private var isEntitled = true
 
-    /// 書き換えを有効にするbundle IDの集合(UserDefaultsから読込・設定UIで更新)
-    private var enabledBundleIDs: Set<String> = []
+    /// デスクトップアプリで書き換えを有効にするサービス(UserDefaultsから読込・設定UIで更新)
+    private var enabledDesktopIDs: Set<String> = []
+    /// ブラウザ版で書き換えを有効にするサービス
+    private var enabledWebIDs: Set<String> = []
     /// アプリ側の送信キーが⌘Enter(=既に統一挙動)のアプリ。書き換えを行わない
     private var cmdEnterSendApps: Set<String> = []
     /// 前面アプリ(NSWorkspace通知でキャッシュ)
@@ -33,12 +36,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var webServiceBundleID: String?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        enabledBundleIDs = settingsStore.enabledBundleIDs
+        enabledDesktopIDs = settingsStore.enabledDesktopIDs
+        enabledWebIDs = settingsStore.enabledWebIDs
         cmdEnterSendApps = settingsStore.cmdEnterSendApps
         setupStatusItem()
         observeWorkspace()
 
-        browserMonitor.isEnabled = settingsStore.browserSupportEnabled
+        browserMonitor.isEnabled = !enabledWebIDs.isEmpty
         browserMonitor.onChange = { [weak self] serviceID in
             self?.webServiceBundleID = serviceID
             self?.recomputeTarget()
@@ -176,9 +180,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
                 self?.tapManager.start()
                 self?.updateStatusUI()
+                self?.maybeShowTutorial()
             }
         }
         updateStatusUI()
+        maybeShowTutorial()
+    }
+
+    /// 初回のみ: タップが動き出したタイミングで使い方チュートリアルを表示する
+    private func maybeShowTutorial() {
+        guard tapManager.isRunning, !settingsStore.hasSeenTutorial else { return }
+        settingsStore.hasSeenTutorial = true
+        let view = TutorialView(
+            openSettings: { [weak self] in self?.openSettings() },
+            finish: { [weak self] in
+                self?.tutorialWindow?.close()
+                self?.tutorialWindow = nil
+            }
+        )
+        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+        window.title = "UniEnterの使い方"
+        window.styleMask = [.titled, .closable]
+        window.isReleasedWhenClosed = false
+        window.center()
+        tutorialWindow = window
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     // MARK: - Workspace observation
@@ -223,8 +250,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func recomputeTarget() {
         let nativeID = frontmostApp?.bundleIdentifier
             .map(AppRegistry.canonicalBundleID)
-            .flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
-        let webID = webServiceBundleID.flatMap { enabledBundleIDs.contains($0) ? $0 : nil }
+            .flatMap { enabledDesktopIDs.contains($0) ? $0 : nil }
+        let webID = webServiceBundleID.flatMap { enabledWebIDs.contains($0) ? $0 : nil }
 
         // アプリ側の送信キーが⌘Enterのアプリは既に統一挙動なので書き換えない。
         // (Web版はワークスペース/アカウントごとに設定が独立しているため対象外にしない)
@@ -281,13 +308,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openSettings() {
         if settingsWindow == nil {
             let model = SettingsViewModel(store: settingsStore)
-            model.onEnabledAppsChange = { [weak self] ids in
+            model.onDesktopIDsChange = { [weak self] ids in
                 guard let self else { return }
-                self.enabledBundleIDs = ids
+                self.enabledDesktopIDs = ids
                 self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
             }
-            model.onBrowserSupportChange = { [weak self] enabled in
-                self?.browserMonitor.isEnabled = enabled
+            model.onWebIDsChange = { [weak self] ids in
+                guard let self else { return }
+                self.enabledWebIDs = ids
+                self.browserMonitor.isEnabled = !ids.isEmpty
+                self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
             }
             model.onCmdEnterSendAppsChange = { [weak self] ids in
                 self?.cmdEnterSendApps = ids

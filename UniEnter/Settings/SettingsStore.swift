@@ -5,19 +5,50 @@ import ServiceManagement
 /// 「ログイン時起動」のみに絞る。
 final class SettingsStore {
     private let defaults = UserDefaults.standard
-    private static let enabledBundleIDsKey = "enabledBundleIDs"
+    private static let enabledBundleIDsKey = "enabledBundleIDs" // 旧形式(移行元)
+    private static let enabledDesktopIDsKey = "enabledDesktopIDs"
+    private static let enabledWebIDsKey = "enabledWebIDs"
 
-    /// 書き換えを有効にするbundle IDの集合。未設定なら全対象アプリが有効。
-    var enabledBundleIDs: Set<String> {
+    /// デスクトップアプリで書き換えを有効にするサービスの集合。
+    /// 未設定なら旧形式から移行し、それも無ければ全対象が有効。
+    var enabledDesktopIDs: Set<String> {
         get {
-            guard let stored = defaults.stringArray(forKey: Self.enabledBundleIDsKey) else {
-                return AppRegistry.allBundleIDs
+            if let stored = defaults.stringArray(forKey: Self.enabledDesktopIDsKey) {
+                return Set(stored)
             }
-            return Set(stored)
+            if let legacy = defaults.stringArray(forKey: Self.enabledBundleIDsKey) {
+                return Set(legacy).intersection(AppRegistry.desktopBundleIDs)
+            }
+            return AppRegistry.desktopBundleIDs
         }
         set {
-            defaults.set(Array(newValue).sorted(), forKey: Self.enabledBundleIDsKey)
+            defaults.set(Array(newValue).sorted(), forKey: Self.enabledDesktopIDsKey)
         }
+    }
+
+    /// ブラウザ版で書き換えを有効にするサービスの集合。
+    var enabledWebIDs: Set<String> {
+        get {
+            if let stored = defaults.stringArray(forKey: Self.enabledWebIDsKey) {
+                return Set(stored)
+            }
+            if let legacy = defaults.stringArray(forKey: Self.enabledBundleIDsKey) {
+                // 旧「ブラウザのWeb版でも有効」トグルを引き継ぐ
+                return browserSupportEnabled ? Set(legacy).intersection(AppRegistry.webBundleIDs) : []
+            }
+            return AppRegistry.webBundleIDs
+        }
+        set {
+            defaults.set(Array(newValue).sorted(), forKey: Self.enabledWebIDsKey)
+        }
+    }
+
+    private static let hasSeenTutorialKey = "hasSeenTutorial"
+
+    /// 初回チュートリアルを表示済みか
+    var hasSeenTutorial: Bool {
+        get { defaults.bool(forKey: Self.hasSeenTutorialKey) }
+        set { defaults.set(newValue, forKey: Self.hasSeenTutorialKey) }
     }
 
     private static let cmdEnterSendAppsKey = "cmdEnterSendApps"

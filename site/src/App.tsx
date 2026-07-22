@@ -7,46 +7,11 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { CornerDownLeft, Lock } from "lucide-react"
-import { BrandChip, desktopBrands, webOnlyBrands } from "./brands"
+import { CornerDownLeft } from "lucide-react"
+import { ServiceTile, services } from "./brands"
 import HeroDemo from "./HeroDemo"
 
 /* 改行=グリーン / 送信=ブルー(Notion系の落ち着いた色) */
-
-/* macOSウィンドウ風モックアップの枠 */
-function WindowMock({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="overflow-hidden rounded-xl border bg-card text-left shadow-sm">
-      <div className="flex items-center gap-1.5 border-b bg-muted px-4 py-2.5">
-        <span className="size-2.5 rounded-full bg-[#ff5f57]" />
-        <span className="size-2.5 rounded-full bg-[#febc2e]" />
-        <span className="size-2.5 rounded-full bg-[#28c840]" />
-        <span className="ml-2 truncate text-xs text-muted-foreground">{title}</span>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  )
-}
-
-function UrlRow({ url, active }: { url: string; active: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border bg-background px-3 py-2">
-      <span className="flex min-w-0 items-center gap-2 text-sm">
-        <Lock className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="truncate">{url}</span>
-      </span>
-      {active ? (
-        <Badge className="shrink-0 border-transparent bg-[#dbeddb] text-[#1c3829]">
-          統一
-        </Badge>
-      ) : (
-        <Badge variant="secondary" className="shrink-0 text-muted-foreground">
-          干渉しない
-        </Badge>
-      )}
-    </div>
-  )
-}
 
 // (対応アプリのロゴ/名称は brands.tsx に集約)
 
@@ -166,34 +131,15 @@ export default function App() {
             alt="MacBookでチャットアプリを使っている様子"
             className="mb-10 w-full rounded-xl border shadow-sm"
           />
-          <div className="grid gap-5 sm:grid-cols-2">
-            <WindowMock title="デスクトップアプリ">
-              <div className="flex flex-wrap gap-2">
-                {desktopBrands.map((brand) => (
-                  <BrandChip key={brand.name} brand={brand} />
-                ))}
-              </div>
-              <p className="mt-4 text-xs text-muted-foreground">
-                設定のチェックボックスでアプリごとにオン/オフできます
-              </p>
-            </WindowMock>
-            <WindowMock title="ブラウザ — Safari / Chrome / Edge / Arc など">
-              <div className="space-y-2">
-                <UrlRow url="app.slack.com" active />
-                <UrlRow url="chatgpt.com" active />
-                <UrlRow url="x.com/messages(DM)" active />
-                <UrlRow url="example.com" active={false} />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {webOnlyBrands.map((brand) => (
-                  <BrandChip key={brand.name} brand={brand} />
-                ))}
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Gemini・X・InstagramのDMはWeb版で対応
-              </p>
-            </WindowMock>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {services.map((service) => (
+              <ServiceTile key={service.name} service={service} />
+            ))}
           </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            「ブラウザ」は Safari / Chrome / Edge / Arc などで各サービスのWeb版を開いたタブが対象。
+            設定でサービスごと・アプリ/ブラウザごとにオン/オフできます。
+          </p>
         </div>
       </section>
 
