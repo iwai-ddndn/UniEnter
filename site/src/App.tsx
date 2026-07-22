@@ -9,30 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CornerDownLeft, Lock } from "lucide-react"
 import { BrandChip, desktopBrands, webOnlyBrands } from "./brands"
+import HeroDemo from "./HeroDemo"
 
 /* 改行=グリーン / 送信=ブルー(Notion系の落ち着いた色) */
-const NEWLINE = "#0f7b6c"
-const SEND = "#2383e2"
-
-function HeroVisual() {
-  return (
-    <div className="relative mx-auto mt-12 max-w-3xl overflow-hidden rounded-xl border shadow-sm">
-      <img
-        src="./assets/hero.png"
-        alt="Enterキーは改行、⌘Enterキーは送信"
-        className="block w-full"
-      />
-      <div className="absolute inset-x-0 bottom-[9%] flex text-lg font-bold sm:text-2xl">
-        <p className="w-1/2 text-center" style={{ color: NEWLINE }}>
-          Enter → 改行
-        </p>
-        <p className="w-1/2 text-center" style={{ color: SEND }}>
-          ⌘Enter → 送信
-        </p>
-      </div>
-    </div>
-  )
-}
 
 /* macOSウィンドウ風モックアップの枠 */
 function WindowMock({ title, children }: { title: string; children: React.ReactNode }) {
@@ -144,7 +123,9 @@ export default function App() {
           SlackもTeamsも、ChatGPTもClaudeも — 「うっかり送信」をなくします。
         </p>
 
-        <HeroVisual />
+        <div className="mt-12">
+          <HeroDemo />
+        </div>
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" asChild>
