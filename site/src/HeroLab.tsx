@@ -276,7 +276,7 @@ function MiniSlack({ demo }: { demo: Demo }) {
         <span className="text-[11px] font-semibold text-white"># 進行中プロジェクト</span>
       </div>
       <div className="flex min-h-0 flex-1 flex-col p-2.5">
-        <div className="flex min-h-0 flex-1 flex-col justify-end gap-2 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
           <div className="flex items-start gap-1.5">
             <span className="mt-0.5 size-5 shrink-0 rounded bg-[#e0b64f]" />
             <div className="min-w-0">
@@ -294,7 +294,7 @@ function MiniSlack({ demo }: { demo: Demo }) {
             </div>
           ))}
         </div>
-        <div className="mt-2 min-h-12 shrink-0 rounded-md border border-[#c9c9c9] px-2 py-1.5 text-[11px] whitespace-pre-line">
+        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-md border border-[#c9c9c9] px-2 py-1.5 text-[11px] whitespace-pre-line">
           {demo.input}
           <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-foreground align-middle" />
         </div>
@@ -312,7 +312,7 @@ function MiniDiscord({ demo }: { demo: Demo }) {
         <span className="truncate text-[11px] font-semibold text-neutral-200">作業つうわ</span>
       </div>
       <div className="flex min-h-0 flex-1 flex-col p-2.5">
-        <div className="flex min-h-0 flex-1 flex-col justify-end gap-2 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
           <div className="flex items-start gap-1.5">
             <span className="mt-0.5 size-5 shrink-0 rounded-full bg-[#5865F2]" />
             <div className="min-w-0">
@@ -330,7 +330,7 @@ function MiniDiscord({ demo }: { demo: Demo }) {
             </div>
           ))}
         </div>
-        <div className="mt-2 min-h-12 shrink-0 rounded-lg bg-[#383a40] px-2 py-1.5 text-[11px] whitespace-pre-line text-neutral-100">
+        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-lg bg-[#383a40] px-2 py-1.5 text-[11px] whitespace-pre-line text-neutral-100">
           {demo.input}
           <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-white align-middle" />
         </div>
@@ -353,7 +353,7 @@ function MiniLine({ demo }: { demo: Demo }) {
         <span className="truncate text-[11px] text-muted-foreground">ゆうこ</span>
       </div>
       <div className="flex min-h-0 flex-1 flex-col bg-[#dce4f0] p-2.5">
-        <div className="flex min-h-0 flex-1 flex-col justify-end gap-2 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
           <div className="flex items-start gap-1">
             <span className="size-5 shrink-0 rounded-full bg-[#c9a2d8]" />
             <div className="max-w-[85%] rounded-xl rounded-tl-sm bg-white px-2.5 py-1.5 text-[11px]">
@@ -371,7 +371,7 @@ function MiniLine({ demo }: { demo: Demo }) {
             </div>
           ))}
         </div>
-        <div className="mt-2 min-h-12 shrink-0 rounded-2xl border bg-white px-3 py-1.5 text-[11px] whitespace-pre-line">
+        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-2xl border bg-white px-3 py-1.5 text-[11px] whitespace-pre-line">
           {demo.input}
           <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-foreground align-middle" />
         </div>
