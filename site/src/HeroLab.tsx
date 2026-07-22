@@ -303,28 +303,34 @@ function MiniSlack({ demo }: { demo: Demo }) {
   )
 }
 
-/* ChatGPT風: ダークモード・AIチャット型 */
-function MiniDarkAI({ demo }: { demo: Demo }) {
+/* Discord風: ダークモード・フラットなメッセージリスト */
+function MiniDiscord({ demo }: { demo: Demo }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-[#3a3a3a] bg-[#212121] text-left text-white shadow-sm">
-      <div className="flex items-center gap-1.5 border-b border-[#3a3a3a] px-3 py-1.5">
-        <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-white">
-          <span className="text-[9px] leading-none font-bold text-black">✳</span>
-        </span>
-        <span className="truncate text-[11px] text-neutral-300">ChatGPT</span>
+    <div className="overflow-hidden rounded-lg border border-[#26282c] bg-[#313338] text-left text-white shadow-sm">
+      <div className="flex items-center gap-1.5 border-b border-[#26282c] bg-[#2b2d31] px-3 py-1.5">
+        <span className="text-[13px] leading-none text-[#80848e]">#</span>
+        <span className="truncate text-[11px] font-semibold text-neutral-200">作業つうわ</span>
       </div>
       <div className="p-2.5">
-        <p className="text-[11px] text-neutral-200">なんでもご相談ください。</p>
-        <div className="mt-1.5 h-16 space-y-1 overflow-hidden">
+        <div className="flex items-start gap-1.5">
+          <span className="mt-0.5 size-5 shrink-0 rounded-full bg-[#5865F2]" />
+          <div className="min-w-0">
+            <p className="text-[11px] leading-tight font-semibold text-[#f0b232]">ken</p>
+            <p className="text-[11px] text-neutral-200">今夜ボイチャ集合で🎮</p>
+          </div>
+        </div>
+        <div className="mt-1.5 h-16 overflow-hidden">
           {demo.sent.map((m) => (
-            <div key={m} className="flex justify-end">
-              <div className="max-w-[90%] rounded-xl rounded-br-sm bg-[#3a3a3a] px-2.5 py-1.5 text-[11px] whitespace-pre-line">
-                {m}
+            <div key={m} className="flex items-start gap-1.5">
+              <span className="mt-0.5 size-5 shrink-0 rounded-full bg-[#57F287]" />
+              <div className="min-w-0">
+                <p className="text-[11px] leading-tight font-semibold text-[#6fb3e0]">あなた</p>
+                <p className="text-[11px] whitespace-pre-line text-neutral-200">{m}</p>
               </div>
             </div>
           ))}
         </div>
-        <div className="min-h-12 rounded-xl border border-[#4a4a4a] bg-[#2f2f2f] px-2 py-1.5 text-[11px] whitespace-pre-line">
+        <div className="min-h-12 rounded-lg bg-[#383a40] px-2 py-1.5 text-[11px] whitespace-pre-line text-neutral-100">
           {demo.input}
           <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-white align-middle" />
         </div>
@@ -380,7 +386,7 @@ function VariantE() {
     <div className="mx-auto max-w-3xl rounded-xl border bg-muted p-5">
       <div className="grid grid-cols-3 gap-3">
         <MiniSlack demo={demo} />
-        <MiniDarkAI demo={demo} />
+        <MiniDiscord demo={demo} />
         <MiniLine demo={demo} />
       </div>
       <div className="mt-6 flex items-center justify-center gap-3">
