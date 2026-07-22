@@ -13,6 +13,7 @@ function useChatDemo(sendOnEnter: boolean) {
   const [input, setInput] = useState("")
   const [sent, setSent] = useState<string[]>([])
   const [pressed, setPressed] = useState<"" | "enter" | "cmd">("")
+  const [action, setAction] = useState<"" | "newline" | "send">("")
 
   useEffect(() => {
     let alive = true
@@ -22,6 +23,7 @@ function useChatDemo(sendOnEnter: boolean) {
       while (alive) {
         setSent([])
         setInput("")
+        setAction("")
         for (let i = 1; i <= LINE1.length; i++) {
           if (!alive) return
           setInput(LINE1.slice(0, i))
@@ -29,6 +31,7 @@ function useChatDemo(sendOnEnter: boolean) {
         }
         await sleep(400)
         setPressed("enter")
+        setAction("newline")
         await sleep(450)
         setPressed("")
         if (sendOnEnter) {
@@ -40,6 +43,7 @@ function useChatDemo(sendOnEnter: boolean) {
         }
         setInput(LINE1 + "\n")
         await sleep(300)
+        setAction("")
         for (let i = 1; i <= LINE2.length; i++) {
           if (!alive) return
           setInput(LINE1 + "\n" + LINE2.slice(0, i))
@@ -47,6 +51,7 @@ function useChatDemo(sendOnEnter: boolean) {
         }
         await sleep(500)
         setPressed("cmd")
+        setAction("send")
         await sleep(450)
         setPressed("")
         setSent([LINE1 + "\n" + LINE2])
@@ -59,7 +64,7 @@ function useChatDemo(sendOnEnter: boolean) {
     }
   }, [sendOnEnter])
 
-  return { input, sent, pressed }
+  return { input, sent, pressed, action }
 }
 
 function MiniKey({ label, active }: { label: string; active: boolean }) {
@@ -259,7 +264,91 @@ function VariantD() {
   )
 }
 
+/* 案E: 3アプリ同時デモ + キー押下(案B+案Cの統合) */
+type Demo = ReturnType<typeof useChatDemo>
+
+const miniApps = [
+  { name: "Slack", hex: "4A154B", initial: "S", incoming: "例の資料、今日もらえそう?" },
+  { name: "ChatGPT", hex: "10A37F", initial: "G", incoming: "なんでもご相談ください。" },
+  { name: "LINE", hex: "06C755", initial: "L", incoming: "この前の写真送るね📷" },
+]
+
+function MiniChatWindow({
+  app,
+  demo,
+}: {
+  app: (typeof miniApps)[number]
+  demo: Demo
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border bg-card text-left shadow-sm">
+      <div className="flex items-center gap-1.5 border-b bg-muted px-3 py-1.5">
+        <span
+          className="flex size-4 shrink-0 items-center justify-center rounded"
+          style={{ backgroundColor: `#${app.hex}` }}
+        >
+          <span className="text-[9px] leading-none font-bold text-white">{app.initial}</span>
+        </span>
+        <span className="truncate text-[11px] text-muted-foreground">{app.name}</span>
+      </div>
+      <div className="space-y-2 p-2.5">
+        <div className="flex justify-start">
+          <div className="max-w-[90%] rounded-xl rounded-tl-sm bg-muted px-2.5 py-1.5 text-[11px]">
+            {app.incoming}
+          </div>
+        </div>
+        <div className="h-16 space-y-1 overflow-hidden">
+          {demo.sent.map((m) => (
+            <div key={m} className="flex justify-end">
+              <div
+                className="max-w-[90%] rounded-xl rounded-br-sm px-2.5 py-1.5 text-[11px] whitespace-pre-line text-white"
+                style={{ backgroundColor: SEND }}
+              >
+                {m}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="min-h-12 rounded-md border bg-background px-2 py-1.5 text-[11px] whitespace-pre-line">
+          {demo.input}
+          <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-foreground align-middle" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function VariantE() {
+  const demo = useChatDemo(false)
+  return (
+    <div className="mx-auto max-w-3xl rounded-xl border bg-muted p-5">
+      <div className="grid grid-cols-3 gap-3">
+        {miniApps.map((app) => (
+          <MiniChatWindow key={app.name} app={app} demo={demo} />
+        ))}
+      </div>
+      <div className="mt-6 flex items-center justify-center gap-3">
+        <BigKey label="⌘" active={demo.pressed === "cmd"} />
+        <BigKey label="Enter" active={demo.pressed === "enter" || demo.pressed === "cmd"} wide />
+        <div className="ml-2 w-24 text-left text-xl font-bold">
+          {demo.action === "newline" && <span style={{ color: NEWLINE }}>↵ 改行</span>}
+          {demo.action === "send" && <span style={{ color: SEND }}>✈ 送信</span>}
+        </div>
+      </div>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        どのアプリでも、同じ操作。
+      </p>
+    </div>
+  )
+}
+
 const variants = [
+  {
+    id: "E",
+    title: "3アプリ同期デモ + キー押下(統合案)",
+    note: "1回のキー操作が、すべてのアプリに同じ結果をもたらすことを見せる",
+    component: VariantE,
+  },
   { id: "A", title: "自動タイピングデモ(ミニマル)", note: "現ヒーローの枠にそのまま収まる", component: VariantA },
   { id: "B", title: "実機風チャットウィンドウ", note: "利用シーンごと見せる。情報量多め", component: VariantB },
   { id: "C", title: "3Dキー押下アニメ", note: "最小の要素で象徴的に", component: VariantC },
