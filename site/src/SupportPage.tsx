@@ -41,9 +41,9 @@ export default function SupportPage() {
           <Heart className="mx-auto mb-4 size-8 text-[#d44c47]" />
           <h1 className="text-3xl font-bold">開発を支援する</h1>
           <p className="mt-4 text-muted-foreground">
-            UniEnterは無料で、広告もありません。
+            UniEnterは個人開発の買い切りアプリです。
             <br />
-            役に立ったら、コーヒー1杯分の投げ銭で応援してもらえるとうれしいです。
+            ライセンス購入に加えて、さらに応援したい方はこちらからどうぞ。
           </p>
         </div>
 
@@ -79,13 +79,17 @@ export default function SupportPage() {
             <li>対応アプリ・対応ブラウザの拡充と検証</li>
           </ul>
           <p className="mt-4 text-xs">
-            支援は任意の寄付であり、ソフトウェアやサポートの対価ではありません。
-            支援の有無にかかわらず、すべての機能を無料で利用できます。
+            支援は任意の寄付であり、ソフトウェアやサポートの対価ではありません
+            (ライセンスの購入は<a className="underline" href="./#pricing">価格ページ</a>から)。
           </p>
         </div>
       </main>
 
       <footer className="border-t px-6 py-10 text-center text-xs text-muted-foreground">
+        <p className="mb-2 space-x-4">
+          <a className="underline" href="./terms.html">利用規約</a>
+          <a className="underline" href="./privacy.html">プライバシーポリシー</a>
+        </p>
         <p>
           © 2026{" "}
           <a className="underline" href="https://oc-to.com" target="_blank" rel="noopener noreferrer">

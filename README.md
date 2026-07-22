@@ -4,9 +4,11 @@
 
 **統一後の挙動: Enter = 改行、⌘Enter = 送信**
 
-- **ダウンロード**: [最新リリース](https://github.com/iwai-ddndn/UniEnter/releases/latest)(macOS 13以降・無料。`.pkg`をダブルクリックでインストール、`.zip`版もあり)
+- **ダウンロード**: [最新リリース](https://github.com/iwai-ddndn/UniEnter/releases/latest)(macOS 13以降。`.pkg`をダブルクリックでインストール、`.zip`版もあり)
+- **価格**: 14日間無料トライアル付き・¥1,480(税込)買い切り。詳細は紹介ページへ
 - **紹介ページ**: https://iwai-ddndn.github.io/UniEnter/
 - **開発を支援**: https://iwai-ddndn.github.io/UniEnter/support.html
+- **利用規約 / プライバシーポリシー**: https://iwai-ddndn.github.io/UniEnter/terms.html / https://iwai-ddndn.github.io/UniEnter/privacy.html
 
 > 公証(notarization)準備中のため、初回のみ システム設定 → プライバシーとセキュリティ → 「このまま開く」から起動してください。
 
@@ -116,6 +118,12 @@ UniEnterTests/    RemapEngineTests.swift(判定ロジックの網羅テスト)
 ```
 
 `project.yml`(XcodeGen)がプロジェクト定義のソースオブトゥルース。`.xcodeproj`は生成物でありgit管理外。
+
+## ライセンス
+
+ソースコードは透明性のために公開していますが、オープンソースライセンスは付与していません(All rights reserved)。
+閲覧・個人的なビルドは歓迎しますが、再配布・改変版の配布・商用利用はできません。
+アプリの利用条件は[利用規約](https://iwai-ddndn.github.io/UniEnter/terms.html)を参照してください。
 
 ## 制作者
 

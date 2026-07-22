@@ -1,0 +1,16 @@
+name = "unienter-license"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+# デプロイ前に `wrangler kv namespace create LICENSES` で作成したIDを設定する
+[[kv_namespaces]]
+binding = "LICENSES"
+id = "TODO_KV_NAMESPACE_ID"
+
+[vars]
+# 本番: https://api.paddle.com / サンドボックス: https://sandbox-api.paddle.com
+PADDLE_API_BASE = "https://api.paddle.com"
+# LicenseManager.publicKeyBase64 と同値(公開情報)
+LICENSE_PUBLIC_KEY = "GnuD4CdMgZHXooBnItp7HxOZUQD7Ai/fURl0oqidhXk="
+# Resend利用時のみ(ドメイン認証済みの送信元)
+MAIL_FROM = "UniEnter <license@oc-to.com>"

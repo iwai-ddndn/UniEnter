@@ -249,6 +249,8 @@ export default function App() {
           <a className="underline" href="https://github.com/iwai-ddndn/UniEnter">GitHub</a>
           <a className="underline" href="https://github.com/iwai-ddndn/UniEnter/releases">ダウンロード</a>
           <a className="underline" href="#pricing">価格</a>
+          <a className="underline" href="./terms.html">利用規約</a>
+          <a className="underline" href="./privacy.html">プライバシーポリシー</a>
         </p>
         <p>
           © 2026{" "}
