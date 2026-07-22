@@ -272,18 +272,18 @@ type Demo = ReturnType<typeof useChatDemo>
 function MiniSlack({ demo }: { demo: Demo }) {
   return (
     <div className="overflow-hidden rounded-lg border bg-white text-left shadow-sm">
-      <div className="flex items-center gap-1.5 border-b px-3 py-1.5" style={{ backgroundColor: "#4A154B" }}>
+      <div className="flex h-7 items-center gap-1.5 border-b px-3" style={{ backgroundColor: "#4A154B" }}>
         <span className="text-[11px] font-semibold text-white"># 進行中プロジェクト</span>
       </div>
       <div className="p-2.5">
-        <div className="flex items-start gap-1.5">
+        <div className="flex h-11 items-start gap-1.5">
           <span className="mt-0.5 size-5 shrink-0 rounded bg-[#e0b64f]" />
           <div className="min-w-0">
             <p className="text-[11px] leading-tight font-bold">田中</p>
             <p className="text-[11px]">例の資料、今日もらえそう?</p>
           </div>
         </div>
-        <div className="mt-1.5 h-16 overflow-hidden">
+        <div className="h-16 overflow-hidden">
           {demo.sent.map((m) => (
             <div key={m} className="flex items-start gap-1.5">
               <span className="mt-0.5 size-5 shrink-0 rounded bg-[#7fb4a2]" />
@@ -307,19 +307,19 @@ function MiniSlack({ demo }: { demo: Demo }) {
 function MiniDiscord({ demo }: { demo: Demo }) {
   return (
     <div className="overflow-hidden rounded-lg border border-[#26282c] bg-[#313338] text-left text-white shadow-sm">
-      <div className="flex items-center gap-1.5 border-b border-[#26282c] bg-[#2b2d31] px-3 py-1.5">
+      <div className="flex h-7 items-center gap-1.5 border-b border-[#26282c] bg-[#2b2d31] px-3">
         <span className="text-[13px] leading-none text-[#80848e]">#</span>
         <span className="truncate text-[11px] font-semibold text-neutral-200">作業つうわ</span>
       </div>
       <div className="p-2.5">
-        <div className="flex items-start gap-1.5">
+        <div className="flex h-11 items-start gap-1.5">
           <span className="mt-0.5 size-5 shrink-0 rounded-full bg-[#5865F2]" />
           <div className="min-w-0">
             <p className="text-[11px] leading-tight font-semibold text-[#f0b232]">ken</p>
-            <p className="text-[11px] text-neutral-200">今夜ボイチャ集合で🎮</p>
+            <p className="text-[11px] text-neutral-200">例の資料、今日もらえそう?</p>
           </div>
         </div>
-        <div className="mt-1.5 h-16 overflow-hidden">
+        <div className="h-16 overflow-hidden">
           {demo.sent.map((m) => (
             <div key={m} className="flex items-start gap-1.5">
               <span className="mt-0.5 size-5 shrink-0 rounded-full bg-[#57F287]" />
@@ -343,7 +343,7 @@ function MiniDiscord({ demo }: { demo: Demo }) {
 function MiniLine({ demo }: { demo: Demo }) {
   return (
     <div className="overflow-hidden rounded-lg border text-left shadow-sm">
-      <div className="flex items-center gap-1.5 border-b bg-white px-3 py-1.5">
+      <div className="flex h-7 items-center gap-1.5 border-b bg-white px-3">
         <span
           className="flex size-4 shrink-0 items-center justify-center rounded"
           style={{ backgroundColor: "#06C755" }}
@@ -353,13 +353,13 @@ function MiniLine({ demo }: { demo: Demo }) {
         <span className="truncate text-[11px] text-muted-foreground">ゆうこ</span>
       </div>
       <div className="bg-[#dce4f0] p-2.5">
-        <div className="flex items-end gap-1">
+        <div className="flex h-11 items-start gap-1">
           <span className="size-5 shrink-0 rounded-full bg-[#c9a2d8]" />
-          <div className="max-w-[85%] rounded-xl rounded-bl-sm bg-white px-2.5 py-1.5 text-[11px]">
-            この前の写真送るね📷
+          <div className="max-w-[85%] rounded-xl rounded-tl-sm bg-white px-2.5 py-1.5 text-[11px]">
+            例の資料、今日もらえそう?
           </div>
         </div>
-        <div className="mt-1.5 h-16 space-y-1 overflow-hidden">
+        <div className="h-16 space-y-1 overflow-hidden">
           {demo.sent.map((m) => (
             <div key={m} className="flex justify-end">
               <div
@@ -371,7 +371,7 @@ function MiniLine({ demo }: { demo: Demo }) {
             </div>
           ))}
         </div>
-        <div className="min-h-12 rounded-full border bg-white px-3 py-1.5 text-[11px] whitespace-pre-line">
+        <div className="min-h-12 rounded-2xl border bg-white px-3 py-1.5 text-[11px] whitespace-pre-line">
           {demo.input}
           <span className="ml-0.5 inline-block h-3 w-px animate-pulse bg-foreground align-middle" />
         </div>
