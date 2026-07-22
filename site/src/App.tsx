@@ -117,15 +117,15 @@ export default function App() {
           <br />
           改行と送信を統一。
         </h1>
-        <p className="mx-auto mt-5 max-w-lg text-muted-foreground">
+        <div className="mt-10">
+          <HeroDemo />
+        </div>
+
+        <p className="mx-auto mt-10 max-w-lg text-muted-foreground">
           Enterはいつでも改行、送信は⌘Enter。
           <br />
           SlackもTeamsも、ChatGPTもClaudeも — 「うっかり送信」をなくします。
         </p>
-
-        <div className="mt-12">
-          <HeroDemo />
-        </div>
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" asChild>
