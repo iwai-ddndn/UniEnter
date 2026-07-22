@@ -119,4 +119,4 @@ UniEnterTests/    RemapEngineTests.swift(判定ロジックの網羅テスト)
 
 ## 制作者
 
-octo — お問い合わせ: [info@oc-to.com](mailto:info@oc-to.com)
+制作: [octo](https://oc-to.com)(oc-to.com)— お問い合わせ: [info@oc-to.com](mailto:info@oc-to.com)

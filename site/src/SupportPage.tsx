@@ -87,7 +87,11 @@ export default function SupportPage() {
 
       <footer className="border-t px-6 py-10 text-center text-xs text-muted-foreground">
         <p>
-          © 2026 octo — お問い合わせ:{" "}
+          © 2026{" "}
+          <a className="underline" href="https://oc-to.com" target="_blank" rel="noopener noreferrer">
+            octo
+          </a>{" "}
+          — お問い合わせ:{" "}
           <a className="underline" href="mailto:info@oc-to.com">
             info@oc-to.com
           </a>

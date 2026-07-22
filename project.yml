@@ -23,7 +23,7 @@ targets:
         CFBundleVersion: "1"
         LSUIElement: true
         NSPrincipalClass: NSApplication
-        NSHumanReadableCopyright: ""
+        NSHumanReadableCopyright: "© 2026 octo (oc-to.com)"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.iwai.UniEnter

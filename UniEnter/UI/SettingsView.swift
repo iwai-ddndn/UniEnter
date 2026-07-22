@@ -161,7 +161,7 @@ struct SettingsView: View {
 
             Divider()
 
-            Text("制作: octo — [info@oc-to.com](mailto:info@oc-to.com)")
+            Text("制作: [octo](https://oc-to.com) — お問い合わせ: [info@oc-to.com](mailto:info@oc-to.com)")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
