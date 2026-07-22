@@ -384,6 +384,8 @@ function VariantE() {
         <MiniLine demo={demo} />
       </div>
       <div className="mt-6 flex items-center justify-center gap-3">
+        {/* 右のラベル領域と同幅のスペーサーでキー列を正確に中央へ */}
+        <div className="mr-2 w-24" aria-hidden />
         <BigKey label="⌘" active={demo.pressed === "cmd"} />
         <BigKey label="Enter" active={demo.pressed === "enter" || demo.pressed === "cmd"} wide />
         <div className="ml-2 w-24 text-left text-xl font-bold">
