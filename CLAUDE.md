@@ -62,7 +62,7 @@ cd site && npm run build
 ## 公開状態(重要)
 
 - **2026-07-22に公開済み**: リポジトリpublic・GitHub Pages有効・リリースv0.2.0(pkg+zip)添付済み
-- LP: https://iwai-ddndn.github.io/UniEnter/(利用規約 terms.html / プライバシーポリシー privacy.html も公開済み)
+- LP: https://unienter.oc-to.com/(利用規約 terms.html / プライバシーポリシー privacy.html も公開済み)
 - リリース: https://github.com/iwai-ddndn/UniEnter/releases
 - コミットメールはGitHub noreplyに統一済み(個人メールをコミットに入れない)。再リリース時は `scripts/release.sh` → `scripts/publish.sh`
 

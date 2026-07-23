@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// 購入ページのURL。Paddleで商品を作成したらチェックアウトリンクに差し替える。
-let purchaseURL = URL(string: "https://iwai-ddndn.github.io/UniEnter/#purchase")!
+let purchaseURL = URL(string: "https://unienter.oc-to.com/#pricing")!
 
 final class LicenseViewModel: ObservableObject {
     @Published var state: LicenseState

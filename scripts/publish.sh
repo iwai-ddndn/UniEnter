@@ -20,5 +20,5 @@ test -f dist/UniEnter.pkg && gh release upload "v$VERSION" dist/UniEnter.pkg --c
 
 echo "==> 完了"
 echo "リポジトリ: https://github.com/iwai-ddndn/UniEnter"
-echo "LP:        https://iwai-ddndn.github.io/UniEnter/ (反映まで数分)"
+echo "LP:        https://unienter.oc-to.com/ (反映まで数分)"
 echo "DL:        https://github.com/iwai-ddndn/UniEnter/releases/latest"
