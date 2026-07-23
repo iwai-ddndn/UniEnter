@@ -168,7 +168,7 @@ function MiniDiscord({ demo }: { demo: Demo }) {
 /* LINE風: 吹き出し型・青グレー背景に緑バブル */
 function MiniLine({ demo }: { demo: Demo }) {
   return (
-    <div className="hidden aspect-[2/3] flex-col overflow-hidden rounded-lg border text-left shadow-sm sm:flex">
+    <div className="flex aspect-[2/3] flex-col overflow-hidden rounded-lg border text-left shadow-sm">
       <div className="flex h-7 shrink-0 items-center gap-1.5 border-b bg-white px-3">
         <span
           className="flex size-4 shrink-0 items-center justify-center rounded"
@@ -206,12 +206,12 @@ function MiniLine({ demo }: { demo: Demo }) {
   )
 }
 
-/* 3アプリ同期デモ + キー押下。モバイルではSlack風の1窓のみ表示 */
+/* 3アプリ同期デモ + キー押下。モバイルではSlack風+LINE風の2窓表示 */
 export default function HeroDemo() {
   const demo = useChatDemo(false)
   return (
     <div className="mx-auto max-w-3xl rounded-xl border bg-muted p-5">
-      <div className="mx-auto grid w-full max-w-60 grid-cols-1 gap-3 sm:max-w-none sm:grid-cols-3">
+      <div className="mx-auto grid w-full max-w-sm grid-cols-2 gap-3 sm:max-w-none sm:grid-cols-3">
         <MiniSlack demo={demo} />
         <MiniDiscord demo={demo} />
         <MiniLine demo={demo} />
