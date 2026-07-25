@@ -2,7 +2,10 @@ import LegalLayout, { LegalSection } from "./LegalLayout"
 
 export default function PrivacyPage() {
   return (
-    <LegalLayout title="プライバシーポリシー" established="制定日: 2026年7月22日">
+    <LegalLayout
+      title="プライバシーポリシー"
+      established="制定日: 2026年7月22日 / 最終改定日: 2026年7月24日"
+    >
       <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
         octo(https://oc-to.com、以下「提供者」)は、macOS用ソフトウェア「UniEnter」(以下「本アプリ」)
         および本ウェブサイトにおける利用者の情報の取り扱いについて、次のとおり定めます。
@@ -46,7 +49,31 @@ export default function PrivacyPage() {
 
       <LegalSection title="4. ウェブサイト">
         <p>
-          本ウェブサイトは GitHub Pages でホストされています。提供者はCookieやアクセス解析ツールを使用していませんが、
+          本ウェブサイトでは、サイトの利用状況を把握し改善に役立てるため、Google LLC が提供するアクセス解析ツール
+          「Google アナリティクス」を使用しています。Google アナリティクスはCookie等を利用して、
+          個人を特定しない形でアクセス情報(閲覧ページ、参照元、おおよその地域、ブラウザ・端末の種類等)を収集し、
+          Googleへ送信します。この機能はブラウザの設定でCookieを無効にするか、
+          <a
+            className="underline"
+            href="https://tools.google.com/dlpage/gaoptout?hl=ja"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Google アナリティクス オプトアウト アドオン
+          </a>
+          により収集を拒否できます。収集される情報とその取り扱いについては、
+          <a
+            className="underline"
+            href="https://policies.google.com/technologies/partner-sites?hl=ja"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Googleのポリシーと規約
+          </a>
+          をご確認ください。
+        </p>
+        <p>
+          また、本ウェブサイトは GitHub Pages でホストされており、
           ホスティング事業者であるGitHubがアクセスログ等を取り扱う場合があります。詳細は
           <a
             className="underline"

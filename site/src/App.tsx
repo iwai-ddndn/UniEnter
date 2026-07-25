@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { CornerDownLeft } from "lucide-react"
+import { useEffect } from "react"
+import { observeSections, track } from "@/lib/analytics"
 import { ServiceTile, services } from "./brands"
 import HeroDemo from "./HeroDemo"
 
@@ -55,6 +57,8 @@ const faqs = [
 ]
 
 export default function App() {
+  useEffect(() => observeSections(), [])
+
   return (
     <div className="min-h-screen">
       {/* Nav */}
@@ -73,7 +77,7 @@ export default function App() {
       </nav>
 
       {/* Hero */}
-      <header className="px-6 pt-16 pb-20 text-center">
+      <header data-track-section="hero" className="px-6 pt-16 pb-20 text-center">
         <Badge variant="secondary" className="mb-6 font-normal text-muted-foreground">
           macOS用メニューバーアプリ・14日間無料トライアル
         </Badge>
@@ -94,7 +98,10 @@ export default function App() {
 
         <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
           <Button size="lg" asChild>
-            <a href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg">
+            <a
+              href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg"
+              onClick={() => track("download_click", { file_type: "pkg", location: "hero" })}
+            >
               無料で試す(.pkg)
             </a>
           </Button>
@@ -107,6 +114,7 @@ export default function App() {
           <a
             className="underline"
             href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.zip"
+            onClick={() => track("download_click", { file_type: "zip", location: "hero" })}
           >
             zip版
           </a>{" "}
@@ -118,7 +126,7 @@ export default function App() {
       </header>
 
       {/* Apps */}
-      <section className="border-t bg-muted/50 px-6 py-20">
+      <section data-track-section="apps" className="border-t bg-muted/50 px-6 py-20">
         <div className="mx-auto max-w-4xl">
           <h2 className="mb-3 text-center text-2xl font-bold sm:text-3xl">
             アプリでも、ブラウザでも。
@@ -144,7 +152,7 @@ export default function App() {
       </section>
 
       {/* Features */}
-      <section className="px-6 py-20">
+      <section data-track-section="features" className="px-6 py-20">
         <div className="mx-auto grid max-w-5xl gap-5 sm:grid-cols-3">
           <Card className="shadow-sm">
             <CardContent className="pt-2">
@@ -191,7 +199,7 @@ export default function App() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="border-t px-6 py-20">
+      <section id="pricing" data-track-section="pricing" className="border-t px-6 py-20">
         <div className="mx-auto max-w-xl">
           <h2 className="mb-3 text-center text-2xl font-bold sm:text-3xl">価格</h2>
           <p className="mx-auto mb-10 max-w-md text-center text-muted-foreground">
@@ -211,7 +219,10 @@ export default function App() {
               </ul>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <Button size="lg" asChild>
-                  <a href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg">
+                  <a
+                    href="https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg"
+                    onClick={() => track("download_click", { file_type: "pkg", location: "pricing" })}
+                  >
                     無料で試す
                   </a>
                 </Button>
@@ -228,7 +239,7 @@ export default function App() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="border-t bg-muted/50 px-6 py-20">
+      <section id="faq" data-track-section="faq" className="border-t bg-muted/50 px-6 py-20">
         <div className="mx-auto max-w-xl">
           <h2 className="mb-8 text-center text-2xl font-bold">よくある質問</h2>
           <Accordion type="single" collapsible>
