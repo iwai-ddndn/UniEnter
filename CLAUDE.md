@@ -20,6 +20,8 @@ macOSのチャットアプリ全般で「Enter=改行、⌘Enter=送信」に統
 - `scripts/publish.sh` — 「公開して」の一発実行(repo public化 + Pages有効化 + リリース添付)
 - `license-signing/` — ライセンス発行。`keys.txt`(秘密鍵)は**git管理外・要バックアップ**
 - `notes/` — 内部向けドキュメント(PADDLE-SETUP.md等。docs/はPagesで公開されるため置かない)
+- `marketing/` — リリース告知プランとX投稿用素材(公開リポジトリなので機密は置かない)
+- `screenshots/app/` — アプリ全画面のスクリーンショット(**生成物。手で編集しない**)
 
 ## ビルド・テスト・実行
 
@@ -30,6 +32,8 @@ xcodegen generate
 xcodebuild -project UniEnter.xcodeproj -scheme UniEnter -configuration Debug -derivedDataPath build test
 # アプリの起動
 open build/Build/Products/Debug/UniEnter.app
+# アプリ全画面のスクリーンショット更新(screenshots/app/へ、固定ファイル名で上書き)
+./scripts/screenshots.sh
 # LPのビルド(docs/へ出力)
 cd site && npm run build
 # LPのプレビュー(Browser paneで localhost:8123)
@@ -58,6 +62,24 @@ cd site && npm run build
 - **設定モデル**: `enabledDesktopIDs` / `enabledWebIDs`(サービス×面で独立、旧`enabledBundleIDs`+`browserSupportEnabled`から自動移行)。対象サービスはAppRegistryに集約(hasDesktop/hasWeb、aliases)
 - **課金**: 買い切り+14日無料トライアル。トライアル開始日時はUserDefaults+Application Supportマーカーの二重記録(早い方採用、再インストール耐性)。ライセンスはEd25519署名キーのオフライン検証(公開鍵はLicenseManagerに埋め込み)。発行: `swift license-signing/issue.swift 購入者メール`。期限切れ時は書き換えのみ停止
 - **決済はPaddle予定**: 手順は `notes/PADDLE-SETUP.md`。チェックアウトURL確定後、LP価格セクションのボタンと `UniEnter/UI/LicenseView.swift` の `purchaseURL` を差し替える
+
+## 画面スクリーンショット(修正指示・レビュー用)
+
+`screenshots/app/` にアプリの全画面(10画面 × ライト/ダーク = 20枚)と `INDEX.md` が入っている。
+**UIの現状を確認したいときは、アプリを起動せずここを見る。**
+
+- 生成: `./scripts/screenshots.sh`。ファイル名は固定で毎回上書きされるため、常に最新
+- 実装: `UniEnter/Debug/ScreenshotMode.swift`(DEBUGビルド限定)。
+  `UniEnter.app --screenshot-mode <出力先>` で起動すると、常駐処理を始めずに各SwiftUIビューを
+  オフスクリーン描画してPNGを保存し終了する。**画面収録権限も実機操作も不要**
+- 撮影対象を増やす/減らすときは `allShots()` に追記する。ライセンス状態などは
+  使い捨てのUserDefaults suiteと使い捨てEd25519鍵で作るので、実際の設定・ライセンスには影響しない
+- 自動更新: `.claude/settings.json` の Stop フックが `scripts/screenshots-if-stale.sh` を呼ぶ。
+  `UniEnter/UI/` などが `screenshots/app/INDEX.md` より新しいときだけ再生成する(通常は0.4秒で素通り)
+- 落とし穴: 各ビューは背景色を持たない(ウィンドウ背景の上に置かれる前提)ため、
+  **撮影時に外観ごとの `windowBackgroundColor` を明示的に敷かないとダークが「白地に白文字」になる**。
+  取りこぼしに気付けるよう、ほぼ単色のPNGが出たら失敗する自己チェックを入れてある
+- 撮れないもの: メニューバーのドロップダウン(NSMenuはOSが描画するため、この方式では取得不可)
 
 ## 公開状態(重要)
 

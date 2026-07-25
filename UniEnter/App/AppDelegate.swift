@@ -36,6 +36,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var webServiceBundleID: String?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        // --screenshot-mode 起動時は常駐処理を一切始めず、全画面を書き出して終了する
+        if ScreenshotMode.runIfRequested() { return }
+        #endif
+
         enabledDesktopIDs = settingsStore.enabledDesktopIDs
         enabledWebIDs = settingsStore.enabledWebIDs
         cmdEnterSendApps = settingsStore.cmdEnterSendApps

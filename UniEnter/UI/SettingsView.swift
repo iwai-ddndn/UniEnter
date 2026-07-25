@@ -74,7 +74,12 @@ final class SettingsViewModel: ObservableObject {
 
 struct SettingsView: View {
     @ObservedObject var model: SettingsViewModel
-    @State private var showAdvanced = false
+    @State private var showAdvanced: Bool
+
+    init(model: SettingsViewModel, showAdvanced: Bool = false) {
+        self.model = model
+        _showAdvanced = State(initialValue: showAdvanced)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

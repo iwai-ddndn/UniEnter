@@ -5,8 +5,14 @@ struct TutorialView: View {
     var openSettings: () -> Void
     var finish: () -> Void
 
-    @State private var step = 0
+    @State private var step: Int
     private let totalSteps = 3
+
+    init(openSettings: @escaping () -> Void, finish: @escaping () -> Void, step: Int = 0) {
+        self.openSettings = openSettings
+        self.finish = finish
+        _step = State(initialValue: step)
+    }
 
     var body: some View {
         VStack(spacing: 20) {

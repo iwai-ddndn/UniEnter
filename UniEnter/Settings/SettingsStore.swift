@@ -4,7 +4,14 @@ import ServiceManagement
 /// UserDefaultsによる設定の永続化。設定項目は「対象アプリの有効/無効」と
 /// 「ログイン時起動」のみに絞る。
 final class SettingsStore {
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
+
+    /// 通常は標準UserDefaults。スクリーンショット生成など、実際の設定を汚さずに
+    /// 決まった状態を再現したい場合のみ別のsuiteを渡す。
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
     private static let enabledBundleIDsKey = "enabledBundleIDs" // 旧形式(移行元)
     private static let enabledDesktopIDsKey = "enabledDesktopIDs"
     private static let enabledWebIDsKey = "enabledWebIDs"

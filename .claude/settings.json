@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./scripts/screenshots-if-stale.sh",
+            "timeout": 300,
+            "statusMessage": "UI変更を検知 — スクリーンショットを更新中"
+          }
+        ]
+      }
+    ]
+  }
+}

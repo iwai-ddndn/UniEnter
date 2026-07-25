@@ -6,7 +6,15 @@ struct OnboardingView: View {
     /// 許可プロンプトを再表示する(リストから削除して登録し直すケース用)
     var requestPrompt: () -> Void
 
-    @State private var showTroubleshooting = false
+    @State private var showTroubleshooting: Bool
+
+    init(openSystemSettings: @escaping () -> Void,
+         requestPrompt: @escaping () -> Void,
+         showTroubleshooting: Bool = false) {
+        self.openSystemSettings = openSystemSettings
+        self.requestPrompt = requestPrompt
+        _showTroubleshooting = State(initialValue: showTroubleshooting)
+    }
 
     var body: some View {
         VStack(spacing: 16) {

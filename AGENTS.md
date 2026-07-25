@@ -20,6 +20,8 @@ macOSのチャットアプリ全般で「Enter=改行、⌘Enter=送信」に統
 - `scripts/publish.sh` — 「公開して」の一発実行(repo public化 + Pages有効化 + リリース添付)
 - `license-signing/` — ライセンス発行。`keys.txt`(秘密鍵)は**git管理外・要バックアップ**
 - `notes/` — 内部向けドキュメント(PADDLE-SETUP.md等。docs/はPagesで公開されるため置かない)
+- `marketing/` — リリース告知プランとX投稿用素材(公開リポジトリなので機密は置かない)
+- `screenshots/app/` — アプリ全画面のスクリーンショット(**生成物。手で編集しない**)
 
 ## ビルド・テスト・実行
 
@@ -30,10 +32,12 @@ xcodegen generate
 xcodebuild -project UniEnter.xcodeproj -scheme UniEnter -configuration Debug -derivedDataPath build test
 # アプリの起動
 open build/Build/Products/Debug/UniEnter.app
+# アプリ全画面のスクリーンショット更新(screenshots/app/へ、固定ファイル名で上書き)
+./scripts/screenshots.sh
 # LPのビルド(docs/へ出力)
 cd site && npm run build
 # LPのプレビュー(Browser paneで localhost:8123)
-# → preview_start name:"docs-preview"(.Codex/launch.json定義済み)
+# → preview_start name:"docs-preview"(.claude/launch.json定義済み)
 ```
 
 - 署名は Apple Development 証明書のハッシュ固定(project.yml)。**再ビルドしてもアクセシビリティ許可(TCC)は維持される**。ad-hoc署名("-")に戻すとビルドごとに許可が無効化されるので戻さないこと
@@ -59,12 +63,30 @@ cd site && npm run build
 - **課金**: 買い切り+14日無料トライアル。トライアル開始日時はUserDefaults+Application Supportマーカーの二重記録(早い方採用、再インストール耐性)。ライセンスはEd25519署名キーのオフライン検証(公開鍵はLicenseManagerに埋め込み)。発行: `swift license-signing/issue.swift 購入者メール`。期限切れ時は書き換えのみ停止
 - **決済はPaddle予定**: 手順は `notes/PADDLE-SETUP.md`。チェックアウトURL確定後、LP価格セクションのボタンと `UniEnter/UI/LicenseView.swift` の `purchaseURL` を差し替える
 
+## 画面スクリーンショット(修正指示・レビュー用)
+
+`screenshots/app/` にアプリの全画面(10画面 × ライト/ダーク = 20枚)と `INDEX.md` が入っている。
+**UIの現状を確認したいときは、アプリを起動せずここを見る。**
+
+- 生成: `./scripts/screenshots.sh`。ファイル名は固定で毎回上書きされるため、常に最新
+- 実装: `UniEnter/Debug/ScreenshotMode.swift`(DEBUGビルド限定)。
+  `UniEnter.app --screenshot-mode <出力先>` で起動すると、常駐処理を始めずに各SwiftUIビューを
+  オフスクリーン描画してPNGを保存し終了する。**画面収録権限も実機操作も不要**
+- 撮影対象を増やす/減らすときは `allShots()` に追記する。ライセンス状態などは
+  使い捨てのUserDefaults suiteと使い捨てEd25519鍵で作るので、実際の設定・ライセンスには影響しない
+- 自動更新: `.claude/settings.json` の Stop フックが `scripts/screenshots-if-stale.sh` を呼ぶ。
+  `UniEnter/UI/` などが `screenshots/app/INDEX.md` より新しいときだけ再生成する(通常は0.4秒で素通り)
+- 落とし穴: 各ビューは背景色を持たない(ウィンドウ背景の上に置かれる前提)ため、
+  **撮影時に外観ごとの `windowBackgroundColor` を明示的に敷かないとダークが「白地に白文字」になる**。
+  取りこぼしに気付けるよう、ほぼ単色のPNGが出たら失敗する自己チェックを入れてある
+- 撮れないもの: メニューバーのドロップダウン(NSMenuはOSが描画するため、この方式では取得不可)
+
 ## 公開状態(重要)
 
-- **GitHubリポジトリ(iwai-ddndn/UniEnter)は現在private・GitHub Pagesは停止中**。ユーザーが「公開して」と言うまで公開しない
-- 公開するとき: `scripts/release.sh` で成果物生成 → `scripts/publish.sh` を実行(public化+Pages+リリース添付)
-- リリースはv0.2.0(pkg+zip)をステージング済み。コミットメールはGitHub noreplyに統一済み(個人メールをコミットに入れない)
-- 公開URL(公開後): LP https://iwai-ddndn.github.io/UniEnter/ / リリース https://github.com/iwai-ddndn/UniEnter/releases
+- **2026-07-22に公開済み**: リポジトリpublic・GitHub Pages有効・リリースv0.2.0(pkg+zip)添付済み
+- LP: https://unienter.oc-to.com/(利用規約 terms.html / プライバシーポリシー privacy.html も公開済み)
+- リリース: https://github.com/iwai-ddndn/UniEnter/releases
+- コミットメールはGitHub noreplyに統一済み(個人メールをコミットに入れない)。再リリース時は `scripts/release.sh` → `scripts/publish.sh`
 
 ## LP(site/)の約束事
 
@@ -77,6 +99,7 @@ cd site && npm run build
 ## 残タスク(2026-07-22時点)
 
 1. Paddleアカウント・商品・チェックアウトURL(ユーザー作業)→ 購入ボタン有効化
+   - キー自動発行のCloudflare Workerは `license-signing/worker/` に実装済み(署名互換をCryptoKitで検証済み)。Paddleアカウント作成後に `worker/README.md` の手順でデプロイ
 2. Apple Developer Program加入(ユーザー作業)→ Developer ID署名+公証+Sparkle自動アップデート
 3. アプリアイコン: ChatGPT生成のダーク版のみ存在。ライト版再生成の指示が保留中。Assets.xcassets組み込みも未実施
 4. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
@@ -85,3 +108,8 @@ cd site && npm run build
 ## 連絡先・クレジット表記の統一
 
 「制作: octo(oc-to.com)/ お問い合わせ: info@oc-to.com」。LPフッター・支援ページ・アプリ設定画面・README・Info.plist(NSHumanReadableCopyright)に反映済み。新しい画面を作るときも同じ形式で入れる。
+
+---
+
+注: 本ファイルは `CLAUDE.md` の写し(1行目の見出しのみ差分)。**片方だけ更新しない**。
+更新は `sed '1s/Claude Code向け/Codex向け/' CLAUDE.md > AGENTS.md` で揃える。
