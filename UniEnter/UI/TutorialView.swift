@@ -85,7 +85,7 @@ struct TutorialView: View {
     }
 
     private var stepApps: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             Text("対象アプリは、設定で選べます")
                 .font(.title3.bold())
             Text("""
@@ -96,17 +96,26 @@ struct TutorialView: View {
             .font(.callout)
             .foregroundColor(.secondary)
             .multilineTextAlignment(.center)
+
+            // 実際に最初につまずくのがここ。先に伝えておく
+            Text("すでにアプリ側で送信を⌘Enterに変えている場合は、\n設定の一番下でそのアプリにチェックを入れてください。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
             Button("設定を開いて確認する") { openSettings() }
         }
     }
 
     private var stepSafety: some View {
         VStack(spacing: 14) {
-            Text("日本語入力も、安心")
+            Text("変換中のEnterには、触れません")
                 .font(.title3.bold())
             Text("""
-            変換確定のEnterには触れないフェイルセーフ設計です。
-            対象外のアプリには一切干渉しません。
+            日本語を変換しているあいだのEnterはそのまま通します。
+            迷ったときは何もしない側に寄せてあるので、
+            変換の確定が誤って送信になることはありません。
 
             14日間はすべての機能を無料で使えます。
             メニューバーの ⏎ からいつでも設定・確認できます。

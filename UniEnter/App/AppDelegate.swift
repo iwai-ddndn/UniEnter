@@ -23,6 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// トライアル/ライセンスが有効か(コールバックはこのキャッシュのみ参照)
     private var isEntitled = true
+    /// 直前に観測したライセンス状態。期限切れに「変わった瞬間」を捉えるために持つ
+    private var lastLicenseState: LicenseState?
 
     /// デスクトップアプリで書き換えを有効にするサービス(UserDefaultsから読込・設定UIで更新)
     private var enabledDesktopIDs: Set<String> = []
@@ -69,14 +71,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         entitlementTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             self?.refreshEntitlement()
         }
-        if case .expired = licenseManager.state {
-            openLicense()
-        }
     }
 
     private func refreshEntitlement() {
+        let state = licenseManager.state
         isEntitled = licenseManager.isEntitled
         updateStatusUI()
+
+        // 期限切れになったら黙って止まらず必ず知らせる。
+        // 「入れたまま忘れられて、何のアプリか分からない常駐」にしないための導線。
+        // 起動時に既に期限切れの場合も lastLicenseState が nil なのでここで開く
+        let wasExpired = lastLicenseState == .expired
+        lastLicenseState = state
+        if state == .expired && !wasExpired {
+            openLicense()
+        }
     }
 
     // MARK: - Event handling
@@ -156,6 +165,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// SwiftUIの内容にウィンドウサイズが追従するウィンドウを作る。
+    ///
+    /// `sizingOptions = [.preferredContentSize]` がないと、詳細オプションの開閉などで
+    /// 内容が伸びたときにウィンドウが広がらず、本文が「…」で切れる。
+    private func makeWindow(title: String, rootView: some View) -> NSWindow {
+        let hosting = NSHostingController(rootView: rootView)
+        hosting.sizingOptions = [.preferredContentSize]
+        let window = NSWindow(contentViewController: hosting)
+        window.title = title
+        window.styleMask = [.titled, .closable, .resizable]
+        window.isReleasedWhenClosed = false
+        window.center()
+        return window
+    }
+
     private func showOnboarding() {
         guard onboardingWindow == nil else { return }
         let view = OnboardingView(
@@ -169,11 +193,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 _ = AXIsProcessTrustedWithOptions(options)
             }
         )
-        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-        window.title = "UniEnter"
-        window.styleMask = [.titled, .closable]
-        window.isReleasedWhenClosed = false
-        window.center()
+        let window = makeWindow(title: "UniEnter", rootView: view)
         onboardingWindow = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -203,11 +223,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.tutorialWindow = nil
             }
         )
-        let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-        window.title = "UniEnterの使い方"
-        window.styleMask = [.titled, .closable]
-        window.isReleasedWhenClosed = false
-        window.center()
+        let window = makeWindow(title: "UniEnterの使い方", rootView: view)
         tutorialWindow = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -328,12 +344,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.cmdEnterSendApps = ids
                 self?.recomputeTarget()
             }
-            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(model: model)))
-            window.title = "UniEnter 設定"
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            settingsWindow = window
+            settingsWindow = makeWindow(title: "UniEnter 設定", rootView: SettingsView(model: model))
         }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -345,12 +356,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model.onActivated = { [weak self] in
                 self?.refreshEntitlement()
             }
-            let window = NSWindow(contentViewController: NSHostingController(rootView: LicenseView(model: model)))
-            window.title = "UniEnter ライセンス"
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            licenseWindow = window
+            licenseWindow = makeWindow(title: "UniEnter ライセンス", rootView: LicenseView(model: model))
         }
         licenseWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -373,7 +379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             statusItem.button?.image = NSImage(systemSymbolName: "exclamationmark.triangle",
                                               accessibilityDescription: "権限が必要")
         } else if !isEntitled {
-            statusMenuLine.title = "トライアル終了 — 書き換え停止中(ライセンス…から購入)"
+            statusMenuLine.title = "トライアル終了 — 停止中(ライセンス…から購入)"
             statusItem.button?.image = NSImage(systemSymbolName: "exclamationmark.triangle",
                                               accessibilityDescription: "トライアル終了")
         } else if tapManager.isRunning {

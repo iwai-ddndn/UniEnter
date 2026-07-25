@@ -49,7 +49,7 @@ struct LicenseView: View {
             case .trial(let daysLeft):
                 Label("無料トライアル中 — 残り \(daysLeft) 日", systemImage: "clock")
                     .font(.headline)
-                Text("トライアル終了後はキーの書き換えが停止します。ライセンスを購入すると引き続き利用できます(買い切り)。")
+                Text("トライアルが終わるとEnterキーの切り替えが止まり、各アプリ本来の動きに戻ります。ライセンスを購入すると引き続き利用できます(買い切り)。")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -57,7 +57,7 @@ struct LicenseView: View {
                 Label("無料トライアルが終了しました", systemImage: "exclamationmark.circle.fill")
                     .font(.headline)
                     .foregroundColor(.orange)
-                Text("現在、キーの書き換えは停止しています。ライセンスを購入すると再開されます(買い切り)。")
+                Text("現在Enterキーの切り替えは止まっていて、各アプリ本来の動きに戻っています。ライセンスを購入すると再開します(買い切り)。使わない場合は、アプリを削除してかまいません。")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

@@ -55,12 +55,12 @@ final class SettingsViewModel: ObservableObject {
         launchAtLogin = store.launchAtLogin
     }
 
-    /// アプリ側の送信キー("Enter" or "⌘Enter")のバインディング
-    func sendKey(_ app: TargetApp) -> Binding<String> {
+    /// そのアプリ自身の設定で送信キーを⌘Enterに変更済みか(＝UniEnterは手を出さない)
+    func alreadyCmdEnter(_ app: TargetApp) -> Binding<Bool> {
         Binding(
-            get: { self.cmdEnterSendApps.contains(app.bundleID) ? "⌘Enter" : "Enter" },
-            set: { value in
-                if value == "⌘Enter" {
+            get: { self.cmdEnterSendApps.contains(app.bundleID) },
+            set: { already in
+                if already {
                     self.cmdEnterSendApps.insert(app.bundleID)
                 } else {
                     self.cmdEnterSendApps.remove(app.bundleID)
@@ -85,7 +85,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("対象アプリ")
                 .font(.headline)
-            Text("チェックしたところで Enter=改行、⌘Enter=送信 に統一します。")
+            Text("チェックを入れたところが、Enter=改行 / ⌘Enter=送信 になります。")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -129,31 +129,33 @@ struct SettingsView: View {
             Text("ブラウザ版はSafari / Chrome / Edge / Arcなどの対象タブで働きます。")
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Divider()
 
+            // ここは「困ったときに自分で見つけられる」ことが最優先。
+            // アプリ側で既に送信キーを⌘Enterにしている人は、UniEnterと二重にかかって
+            // 送信できなくなる。外部から検知する手段がないため、症状から辿れる形にしてある。
             DisclosureGroup(isExpanded: $showAdvanced) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("アプリ側の設定で送信キーを「⌘Enter」に変更している場合はここで宣言してください。そのアプリは既に統一挙動のため、書き換えを行いません。")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("そのアプリ自身の設定で、送信キーをすでに「⌘Enter」に変えていると、UniEnterと二重にかかって送信できなくなります。下でチェックを入れると、UniEnterはそのアプリに何もしません。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+
+                    Text("アプリ側で、送信キーを⌘Enterに変更済み:")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 2)
+
                     ForEach(AppRegistry.all.filter(\.hasDesktop), id: \.bundleID) { app in
-                        HStack {
-                            Text(app.name)
-                            Spacer()
-                            Picker("", selection: model.sendKey(app)) {
-                                Text("Enter").tag("Enter")
-                                Text("⌘Enter").tag("⌘Enter")
-                            }
-                            .labelsHidden()
-                            .fixedSize()
-                        }
+                        Toggle(app.name, isOn: model.alreadyCmdEnter(app))
                     }
+                    .padding(.leading, 4)
                 }
                 .padding(.top, 6)
             } label: {
-                Text("詳細オプション: アプリ側の送信キー")
+                Text("⌘Enterを押しても送信できないときは")
                     .font(.subheadline)
             }
 

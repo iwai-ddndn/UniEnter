@@ -117,8 +117,11 @@ enum ScreenshotMode {
             }
         }
 
-        try writeIndex(lines: lines, count: shots.count * appearances.count, to: outDir)
-        print("スクリーンショット \(shots.count * appearances.count) 枚を書き出しました: \(outDir.path)")
+        let count = shots.count * appearances.count
+        try writeIndex(lines: lines, count: count, to: outDir)
+        try writeGallery(shots: shots, count: count, to: outDir)
+        print("スクリーンショット \(count) 枚を書き出しました: \(outDir.path)")
+        print("ブラウザで見る: \(outDir.appendingPathComponent("index.html").path)")
     }
 
     @MainActor
@@ -270,6 +273,89 @@ enum ScreenshotMode {
         \(lines.joined(separator: "\n"))
         """
         try body.write(to: outDir.appendingPathComponent("INDEX.md"), atomically: true, encoding: .utf8)
+    }
+
+    // MARK: - index.html(ブラウザで見る用のギャラリー)
+
+    /// 依存なしの単一HTML。ライト/ダークの切り替えと、実寸(@1x)表示に対応する。
+    private static func writeGallery(shots: [Shot], count: Int, to outDir: URL) throws {
+        let cards = shots.map { shot in
+            """
+                <figure class="card">
+                  <img data-name="\(shot.name)" src="\(shot.name)-light.png" alt="\(shot.caption)">
+                  <figcaption>\(shot.caption)</figcaption>
+                </figure>
+            """
+        }.joined(separator: "\n")
+
+        let html = """
+        <!doctype html>
+        <html lang="ja">
+        <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>UniEnter 画面一覧</title>
+        <style>
+          :root { color-scheme: light dark; --bg:#fff; --fg:#37352f; --muted:#787774; --line:#e9e9e7; --card:#fff; }
+          body.dark { --bg:#191919; --fg:#e9e9e7; --muted:#9b9a97; --line:#333; --card:#202020; }
+          * { box-sizing: border-box; }
+          body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.7 -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif; }
+          header { position:sticky; top:0; z-index:1; display:flex; flex-wrap:wrap; gap:12px; align-items:baseline;
+                   padding:16px 24px; background:var(--bg); border-bottom:1px solid var(--line); }
+          h1 { margin:0; font-size:17px; }
+          .meta { color:var(--muted); font-size:13px; }
+          .spacer { flex:1 1 auto; }
+          button { font:inherit; font-size:13px; padding:5px 12px; border:1px solid var(--line); border-radius:7px;
+                   background:var(--card); color:var(--fg); cursor:pointer; }
+          button[aria-pressed="true"] { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+          main { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px,1fr)); gap:24px; padding:24px; }
+          .card { margin:0; }
+          .card img { width:100%; height:auto; border:1px solid var(--line); border-radius:10px;
+                      box-shadow:0 1px 3px rgba(0,0,0,.08); background:var(--card); }
+          body.actual .card img { width:auto; max-width:100%; }
+          figcaption { margin-top:8px; color:var(--muted); font-size:13px; }
+          .note { padding:0 24px 32px; color:var(--muted); font-size:13px; }
+        </style>
+        </head>
+        <body>
+        <header>
+          <h1>UniEnter 画面一覧</h1>
+          <span class="meta">\(count) 枚・生成物(<code>./scripts/screenshots.sh</code>)</span>
+          <span class="spacer"></span>
+          <button id="theme" aria-pressed="false">ダーク表示</button>
+          <button id="size" aria-pressed="false">実寸(@1x)</button>
+        </header>
+        <main>
+        \(cards)
+        </main>
+        <p class="note">
+          メニューバーのドロップダウンはOSが描画するため、この一覧には含まれない。<br>
+          撮影対象を増やすときは <code>UniEnter/Debug/ScreenshotMode.swift</code> の <code>allShots()</code> に追記する。
+        </p>
+        <script>
+          const imgs = document.querySelectorAll('img[data-name]')
+          const theme = document.getElementById('theme')
+          const size = document.getElementById('size')
+          theme.onclick = () => {
+            const dark = theme.getAttribute('aria-pressed') !== 'true'
+            theme.setAttribute('aria-pressed', dark)
+            theme.textContent = dark ? 'ライト表示' : 'ダーク表示'
+            document.body.classList.toggle('dark', dark)
+            imgs.forEach(i => { i.src = i.dataset.name + (dark ? '-dark.png' : '-light.png') })
+          }
+          size.onclick = () => {
+            const actual = size.getAttribute('aria-pressed') !== 'true'
+            size.setAttribute('aria-pressed', actual)
+            size.textContent = actual ? '幅に合わせる' : '実寸(@1x)'
+            document.body.classList.toggle('actual', actual)
+            // PNGは@2xなので、実寸表示では半分の幅にする
+            imgs.forEach(i => { i.style.width = actual ? (i.naturalWidth / 2) + 'px' : '' })
+          }
+        </script>
+        </body>
+        </html>
+        """
+        try html.write(to: outDir.appendingPathComponent("index.html"), atomically: true, encoding: .utf8)
     }
 
     private enum ScreenshotError: LocalizedError {

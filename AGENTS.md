@@ -96,14 +96,20 @@ cd site && npm run build
 - 価格: ¥1,480(税込・買い切り)表記。変更時はLPとPaddle両方を揃える
 - 商標: 各社ロゴの扱いは慎重に(名称表記は可、公式ロゴは原則許諾必要)。フッターの商標帰属表記を消さない
 
-## 残タスク(2026-07-22時点)
+## 残タスク(2026-07-25時点)
 
-1. Paddleアカウント・商品・チェックアウトURL(ユーザー作業)→ 購入ボタン有効化
+1. **公証(最優先・ユーザー作業)**: Apple Developer Program加入 → Developer ID署名+公証。
+   **2026-07-25の先行テストで、macOS 15の2台がどちらもインストールできず脱落した**
+   (macOS 15以降は右クリック→「開く」の回避策が廃止され、システム設定からの解除しかない)。
+   LPに手順セクションを用意して緩和したが、これは対症療法。**公証前に広く告知しないこと**。
+   詳細は `notes/FEEDBACK-2026-07-25.md`
+2. Paddleアカウント・商品・チェックアウトURL(ユーザー作業)→ 購入ボタン有効化
    - キー自動発行のCloudflare Workerは `license-signing/worker/` に実装済み(署名互換をCryptoKitで検証済み)。Paddleアカウント作成後に `worker/README.md` の手順でデプロイ
-2. Apple Developer Program加入(ユーザー作業)→ Developer ID署名+公証+Sparkle自動アップデート
-3. アプリアイコン: ChatGPT生成のダーク版のみ存在。ライト版再生成の指示が保留中。Assets.xcassets組み込みも未実施
-4. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
-5. Chatworkは対象から除外済み(ユーザーが未使用・検証不能のため)。復活させる場合は過去コミット参照
+3. `project.yml` の `CFBundleShortVersionString` が `0.1.0` のまま(公開中のリリースはv0.2.0)。次のリリース前に揃える
+4. アプリアイコン: ChatGPT生成のダーク版のみ存在。ライト版再生成の指示が保留中。Assets.xcassets組み込みも未実施
+5. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
+6. Chatworkは対象から除外済み(ユーザーが未使用・検証不能のため)。復活させる場合は過去コミット参照
+7. FBで要望が出た「設定画面のスクショ付き・軽い使い方ページ」は未着手(`screenshots/app/` の画像が使える)
 
 ## 連絡先・クレジット表記の統一
 
