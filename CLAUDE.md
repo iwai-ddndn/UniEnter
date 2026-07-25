@@ -102,7 +102,7 @@ cd site && npm run build
    **2026-07-25の先行テストで、macOS 15の2台がどちらもインストールできず脱落した**
    (macOS 15以降は右クリック→「開く」の回避策が廃止され、システム設定からの解除しかない)。
    LPに手順セクションを用意して緩和したが、これは対症療法。**公証前に広く告知しないこと**。
-   詳細は `notes/FEEDBACK-2026-07-25.md`
+   詳細はObsidian Vaultの `30_Notes/UniEnter/UniEnter-先行テストFB分析（Claude版）.md`(同Fable版もあり)
 2. Paddleアカウント・商品・チェックアウトURL(ユーザー作業)→ 購入ボタン有効化
    - キー自動発行のCloudflare Workerは `license-signing/worker/` に実装済み(署名互換をCryptoKitで検証済み)。Paddleアカウント作成後に `worker/README.md` の手順でデプロイ
 3. `project.yml` の `CFBundleShortVersionString` が `0.1.0` のまま(公開中のリリースはv0.2.0)。次のリリース前に揃える
