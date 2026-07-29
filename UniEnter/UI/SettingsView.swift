@@ -5,11 +5,15 @@ final class SettingsViewModel: ObservableObject {
     @Published var enabledWebIDs: Set<String>
     @Published var launchAtLogin: Bool
     @Published var cmdEnterSendApps: Set<String>
+    /// アプリの設定ファイルから⌘Enter送信を自動検出したアプリ(AppDelegateが更新。保存はしない)
+    @Published var detectedCmdEnterSendApps: Set<String> = []
 
     private let store: SettingsStore
     var onDesktopIDsChange: ((Set<String>) -> Void)?
     var onWebIDsChange: ((Set<String>) -> Void)?
     var onCmdEnterSendAppsChange: ((Set<String>) -> Void)?
+    /// LINE/Slackの送信キー設定を読み直す(許可ダイアログを一度拒否した後のやり直し用)
+    var onRecheckSendKeys: (() -> Void)?
 
     init(store: SettingsStore) {
         self.store = store
@@ -135,10 +139,11 @@ struct SettingsView: View {
 
             // ここは「困ったときに自分で見つけられる」ことが最優先。
             // アプリ側で既に送信キーを⌘Enterにしている人は、UniEnterと二重にかかって
-            // 送信できなくなる。外部から検知する手段がないため、症状から辿れる形にしてある。
+            // 送信できなくなる。LINE/Slackは設定ファイルから自動検出できる(SendKeyDetector)が、
+            // それ以外は外部から検知する手段がないため、症状から辿れる形にしてある。
             DisclosureGroup(isExpanded: $showAdvanced) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("そのアプリ自身の設定で、送信キーをすでに「⌘Enter」に変えていると、UniEnterと二重にかかって送信できなくなります。下でチェックを入れると、UniEnterはそのアプリに何もしません。")
+                    Text("そのアプリ自身の設定で、送信キーをすでに「⌘Enter」に変えていると、UniEnterと二重にかかって送信できなくなります。LINEとSlackは設定を自動で読み取って素通しします(「自動検出」表示)。その他のアプリは下でチェックを入れると、UniEnterはそのアプリに何もしません。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -149,9 +154,34 @@ struct SettingsView: View {
                         .padding(.top, 2)
 
                     ForEach(AppRegistry.all.filter(\.hasDesktop), id: \.bundleID) { app in
-                        Toggle(app.name, isOn: model.alreadyCmdEnter(app))
+                        if model.detectedCmdEnterSendApps.contains(app.bundleID) {
+                            Toggle(isOn: .constant(true)) {
+                                HStack(spacing: 6) {
+                                    Text(app.name)
+                                    Text("自動検出")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 1)
+                                        .background(Color.secondary.opacity(0.15), in: Capsule())
+                                }
+                            }
+                            .disabled(true)
+                        } else {
+                            Toggle(app.name, isOn: model.alreadyCmdEnter(app))
+                        }
                     }
                     .padding(.leading, 4)
+
+                    if let recheck = model.onRecheckSendKeys {
+                        Button("LINE・Slackの設定を読み直す", action: recheck)
+                            .controlSize(.small)
+                            .padding(.top, 2)
+                        Text("読み取りにはmacOSの許可が必要です。ダイアログが出たら「許可」を選んでください(許可しなくても、上のチェックで手動指定できます)。")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(.top, 6)
             } label: {

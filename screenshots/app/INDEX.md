@@ -16,7 +16,7 @@
 | チュートリアル 2/3 — 対象アプリ | ![](04-tutorial-2-apps-light.png) | ![](04-tutorial-2-apps-dark.png) |
 | チュートリアル 3/3 — 日本語入力の安全性 | ![](05-tutorial-3-safety-light.png) | ![](05-tutorial-3-safety-dark.png) |
 | 設定(既定状態) | ![](06-settings-light.png) | ![](06-settings-dark.png) |
-| 設定(詳細オプション: アプリ側の送信キー を展開) | ![](07-settings-advanced-light.png) | ![](07-settings-advanced-dark.png) |
+| 設定(詳細オプション: アプリ側の送信キー を展開、Slackは自動検出の例) | ![](07-settings-advanced-light.png) | ![](07-settings-advanced-dark.png) |
 | ライセンス(トライアル中・残り11日) | ![](08-license-trial-light.png) | ![](08-license-trial-dark.png) |
 | ライセンス(トライアル終了・書き換え停止中) | ![](09-license-expired-light.png) | ![](09-license-expired-dark.png) |
 | ライセンス(認証済み) | ![](10-license-activated-light.png) | ![](10-license-activated-dark.png) |

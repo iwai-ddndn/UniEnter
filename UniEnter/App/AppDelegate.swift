@@ -32,6 +32,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var enabledWebIDs: Set<String> = []
     /// アプリ側の送信キーが⌘Enter(=既に統一挙動)のアプリ。書き換えを行わない
     private var cmdEnterSendApps: Set<String> = []
+    /// アプリの設定ファイルから⌘Enter送信を自動検出したアプリ(手動宣言とは独立のキャッシュ)
+    private var detectedCmdEnterSendApps: Set<String> = []
+    private let sendKeyDetector = SendKeyDetector()
+    /// 設定ファイル読み取り用。macOS 15+の許可ダイアログ待ちで open() が止まるため、
+    /// 1アプリの停滞が他アプリの検出を巻き込まないよう並列にする
+    private let sendKeyProbeQueue = DispatchQueue(
+        label: "dev.iwai.UniEnter.sendkey-probe", qos: .utility, attributes: .concurrent)
+    private var lastSendKeyProbe: [String: Date] = [:]
+    /// 検出が空振り(unknown)に終わったアプリ。許可ダイアログの再表示を避けるため自動再試行しない
+    private var sendKeyProbeGaveUp: Set<String> = []
+    private var sendKeyProbeInFlight: Set<String> = []
+    /// 設定ウィンドウのモデル(自動検出の結果表示を更新するために保持)
+    private weak var settingsModel: SettingsViewModel?
     /// 前面アプリ(NSWorkspace通知でキャッシュ)
     private var frontmostApp: NSRunningApplication?
     /// 前面ブラウザが対象サービスのWeb版を開いているとき、対応するアプリのbundle ID
@@ -48,6 +61,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         cmdEnterSendApps = settingsStore.cmdEnterSendApps
         setupStatusItem()
         observeWorkspace()
+        // 起動時には読まない。設定ファイルの初回アクセスでmacOSの許可ダイアログが出るため、
+        // 「LINE/Slackを開いた直後」という文脈がある瞬間まで待つ(updateFrontmostから呼ぶ)
 
         browserMonitor.isEnabled = !enabledWebIDs.isEmpty
         browserMonitor.onChange = { [weak self] serviceID in
@@ -258,6 +273,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         frontmostApp = app
         log.notice("frontmost: \(app?.bundleIdentifier ?? "nil", privacy: .public)")
         browserMonitor.frontmostChanged(app)
+        // 対象アプリが前面に来たタイミングで送信キー設定を読み直す(設定変更の追従)
+        if let id = app?.bundleIdentifier.map(AppRegistry.canonicalBundleID),
+           enabledDesktopIDs.contains(id) {
+            probeSendKey(for: id)
+        }
         recomputeTarget()
         // 通知取りこぼしに備えて入力ソースも同期し直す
         inputSourceMonitor.refresh()
@@ -275,13 +295,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let webID = webServiceBundleID.flatMap { enabledWebIDs.contains($0) ? $0 : nil }
 
         // アプリ側の送信キーが⌘Enterのアプリは既に統一挙動なので書き換えない。
+        // 手動宣言と自動検出(SendKeyDetector)の和集合で判定する。
         // (Web版はワークスペース/アカウントごとに設定が独立しているため対象外にしない)
-        let nativeNeedsRemap = nativeID.map { !cmdEnterSendApps.contains($0) } ?? false
+        let passthroughApps = cmdEnterSendApps.union(detectedCmdEnterSendApps)
+        let nativeNeedsRemap = nativeID.map { !passthroughApps.contains($0) } ?? false
         engine.frontmostChanged(isTarget: nativeNeedsRemap || webID != nil)
 
         if let id = nativeID {
             let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
-            currentTargetLabel = cmdEnterSendApps.contains(id) ? "\(name)(⌘Enter送信設定・素通し)" : name
+            if detectedCmdEnterSendApps.contains(id) {
+                currentTargetLabel = "\(name)(⌘Enter送信を自動検出・素通し)"
+            } else if cmdEnterSendApps.contains(id) {
+                currentTargetLabel = "\(name)(⌘Enter送信設定・素通し)"
+            } else {
+                currentTargetLabel = name
+            }
         } else if let id = webID {
             let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
             currentTargetLabel = "\(name) (Web)"
@@ -289,6 +317,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             currentTargetLabel = nil
         }
         updateStatusUI()
+    }
+
+    /// LINE/Slackの設定ファイルを読み、⌘Enter送信なら自動素通しに反映する。
+    ///
+    /// 読み取りは専用キューでのみ行う(タップコールバックからは呼ばない)。
+    /// macOS 15+では他アプリのコンテナへの初回アクセスで許可ダイアログが出て、
+    /// ユーザーが答えるまで `open()` がブロックしたままになるため:
+    /// - 起動時ではなく、そのアプリを実際に開いた直後にだけ読む(ダイアログに文脈を与える)
+    /// - 拒否・失敗(unknown)なら自動では再試行しない(ダイアログを繰り返さない)。
+    ///   設定画面の「LINE・Slackの設定を読み直す」からは force で再試行できる
+    private func probeSendKey(for bundleID: String, force: Bool = false) {
+        guard SendKeyDetector.supportedBundleIDs.contains(bundleID) else { return }
+        guard !sendKeyProbeInFlight.contains(bundleID) else { return }
+        if force {
+            sendKeyProbeGaveUp.remove(bundleID)
+        } else {
+            guard !sendKeyProbeGaveUp.contains(bundleID) else { return }
+            // アプリ切替のたびには走らせない(ファイル列挙を伴うため)
+            if let last = lastSendKeyProbe[bundleID], Date().timeIntervalSince(last) < 30 { return }
+        }
+        lastSendKeyProbe[bundleID] = Date()
+        sendKeyProbeInFlight.insert(bundleID)
+        sendKeyProbeQueue.async { [weak self] in
+            guard let self else { return }
+            let detection = self.sendKeyDetector.detect(bundleID: bundleID)
+            DispatchQueue.main.async {
+                self.sendKeyProbeInFlight.remove(bundleID)
+                if detection == .unknown { self.sendKeyProbeGaveUp.insert(bundleID) }
+                self.log.notice("sendkey autodetect \(bundleID, privacy: .public): \(String(describing: detection), privacy: .public)")
+
+                let detected = detection == .cmdEnterSend
+                guard detected != self.detectedCmdEnterSendApps.contains(bundleID) else { return }
+                if detected {
+                    self.detectedCmdEnterSendApps.insert(bundleID)
+                } else {
+                    self.detectedCmdEnterSendApps.remove(bundleID)
+                }
+                self.settingsModel?.detectedCmdEnterSendApps = self.detectedCmdEnterSendApps
+                self.recomputeTarget()
+            }
+        }
     }
 
     @objc private func machineDidWake() {
@@ -331,7 +400,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let model = SettingsViewModel(store: settingsStore)
             model.onDesktopIDsChange = { [weak self] ids in
                 guard let self else { return }
+                let added = ids.subtracting(self.enabledDesktopIDs)
                 self.enabledDesktopIDs = ids
+                // 新たに有効化されたLINE/Slackはすぐ検出を走らせる
+                for id in added where SendKeyDetector.supportedBundleIDs.contains(id) {
+                    self.probeSendKey(for: id, force: true)
+                }
                 self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
             }
             model.onWebIDsChange = { [weak self] ids in
@@ -344,6 +418,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.cmdEnterSendApps = ids
                 self?.recomputeTarget()
             }
+            model.onRecheckSendKeys = { [weak self] in
+                guard let self else { return }
+                for id in SendKeyDetector.supportedBundleIDs where self.enabledDesktopIDs.contains(id) {
+                    self.probeSendKey(for: id, force: true)
+                }
+            }
+            model.detectedCmdEnterSendApps = detectedCmdEnterSendApps
+            settingsModel = model
             settingsWindow = makeWindow(title: "UniEnter 設定", rootView: SettingsView(model: model))
         }
         settingsWindow?.makeKeyAndOrderFront(nil)

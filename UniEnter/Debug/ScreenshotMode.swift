@@ -77,8 +77,14 @@ enum ScreenshotMode {
                  caption: "設定(既定状態)",
                  make: { AnyView(SettingsView(model: settingsModel())) }),
             Shot(name: "07-settings-advanced",
-                 caption: "設定(詳細オプション: アプリ側の送信キー を展開)",
-                 make: { AnyView(SettingsView(model: settingsModel(), showAdvanced: true)) }),
+                 caption: "設定(詳細オプション: アプリ側の送信キー を展開、Slackは自動検出の例)",
+                 make: {
+                     // 自動検出バッジの見え方を確認できるよう、Slackを検出済みの体で撮る
+                     let model = settingsModel()
+                     model.detectedCmdEnterSendApps = [SendKeyDetector.slackBundleID]
+                     model.onRecheckSendKeys = noop
+                     return AnyView(SettingsView(model: model, showAdvanced: true))
+                 }),
             Shot(name: "08-license-trial",
                  caption: "ライセンス(トライアル中・残り11日)",
                  make: { AnyView(LicenseView(model: licenseModel(.trial))) }),
