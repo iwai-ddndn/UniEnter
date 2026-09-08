@@ -1,29 +1,35 @@
 import SwiftUI
 
 /// 初回起動時に一度だけ表示する使い方チュートリアル。
+///
+/// 読むだけの説明ステップは置かず、「操作の説明」と「アプリ側の送信キー確認」の
+/// 2ステップだけに絞る(対象アプリは既定ですべてONなので選ばせない)。
 struct TutorialView: View {
-    var openSettings: () -> Void
+    @ObservedObject var model: SettingsViewModel
     var finish: () -> Void
 
     @State private var step: Int
-    private let totalSteps = 3
+    private let totalSteps = 2
 
-    init(openSettings: @escaping () -> Void, finish: @escaping () -> Void, step: Int = 0) {
-        self.openSettings = openSettings
+    init(model: SettingsViewModel, finish: @escaping () -> Void, step: Int = 0) {
+        self.model = model
         self.finish = finish
         _step = State(initialValue: step)
     }
 
     var body: some View {
         VStack(spacing: 20) {
+            // 送信キー確認ステップだけリストがあるので上詰め、他は中央寄せ
+            if step != 1 { Spacer(minLength: 0) }
             Group {
                 switch step {
                 case 0: stepKeys
-                case 1: stepApps
-                default: stepSafety
+                default: stepSendKey
                 }
             }
             .frame(maxWidth: .infinity)
+
+            Spacer(minLength: 0)
 
             HStack(spacing: 6) {
                 ForEach(0..<totalSteps, id: \.self) { i in
@@ -48,7 +54,7 @@ struct TutorialView: View {
             }
         }
         .padding(24)
-        .frame(width: 420, height: 320)
+        .frame(width: 460, height: 400)
     }
 
     private func key(_ label: String) -> some View {
@@ -77,52 +83,35 @@ struct TutorialView: View {
                     .font(.headline)
                     .foregroundColor(.blue)
             }
-            Text("対象のアプリすべてで、この操作に統一されます。\nうっかり送信は、もう起きません。")
+            Text("SlackやLINE、ChatGPTなどの対象アプリすべてで、\nこの操作に統一されます。うっかり送信は、もう起きません。")
                 .font(.callout)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
     }
 
-    private var stepApps: some View {
-        VStack(spacing: 12) {
-            Text("対象アプリは、設定で選べます")
+    // 実際に最初につまずくのがここ。アプリ側で送信キーを⌘Enterに変えていると
+    // UniEnterと二重にかかって送信できなくなるため、使い始める前に確認してもらう
+    private var stepSendKey: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("すでに⌘Enterで送信に設定しているアプリを\n選んでください")
                 .font(.title3.bold())
-            Text("""
-            SlackやLINE、ChatGPTなどのデスクトップアプリと、
-            そのブラウザ版(Safari / Chrome / Arcなど)に対応しています。
-            アプリ版・ブラウザ版を別々にオン/オフできます。
-            """)
-            .font(.callout)
-            .foregroundColor(.secondary)
-            .multilineTextAlignment(.center)
-
-            // 実際に最初につまずくのがここ。先に伝えておく
-            Text("すでにアプリ側で送信を⌘Enterに変えている場合は、\n設定の一番下でそのアプリにチェックを入れてください。")
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+            Text("アプリ自身の設定で送信キーを「⌘Enter」に変えている場合は、チェックを入れてください。そのアプリにはUniEnterは何もしません(二重にかかるのを防ぎます)。LINEとSlackは設定を自動で読み取ります。")
                 .font(.caption)
                 .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button("設定を開いて確認する") { openSettings() }
-        }
-    }
+            SendKeyAppListView(model: model)
 
-    private var stepSafety: some View {
-        VStack(spacing: 14) {
-            Text("変換中のEnterには、触れません")
-                .font(.title3.bold())
-            Text("""
-            日本語を変換しているあいだのEnterはそのまま通します。
-            迷ったときは何もしない側に寄せてあるので、
-            変換の確定が誤って送信になることはありません。
+            Spacer(minLength: 0)
 
-            14日間はすべての機能を無料で使えます。
-            メニューバーの ⏎ からいつでも設定・確認できます。
-            """)
-            .font(.callout)
-            .foregroundColor(.secondary)
-            .multilineTextAlignment(.center)
+            Text("対象アプリはすべてONで始まります。メニューバーの ⏎ からいつでも変更できます。\n14日間はすべての機能を無料で使えます。")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
         }
     }
 }

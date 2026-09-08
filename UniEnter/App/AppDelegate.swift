@@ -43,8 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// 検出が空振り(unknown)に終わったアプリ。許可ダイアログの再表示を避けるため自動再試行しない
     private var sendKeyProbeGaveUp: Set<String> = []
     private var sendKeyProbeInFlight: Set<String> = []
-    /// 設定ウィンドウのモデル(自動検出の結果表示を更新するために保持)
-    private weak var settingsModel: SettingsViewModel?
+    /// 設定・チュートリアルで共有するビューモデル(初回利用時に生成し、以後使い回す)
+    private var settingsModel: SettingsViewModel?
     /// 前面アプリ(NSWorkspace通知でキャッシュ)
     private var frontmostApp: NSRunningApplication?
     /// 前面ブラウザが対象サービスのWeb版を開いているとき、対応するアプリのbundle ID
@@ -232,7 +232,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard tapManager.isRunning, !settingsStore.hasSeenTutorial else { return }
         settingsStore.hasSeenTutorial = true
         let view = TutorialView(
-            openSettings: { [weak self] in self?.openSettings() },
+            model: ensureSettingsModel(),
             finish: { [weak self] in
                 self?.tutorialWindow?.close()
                 self?.tutorialWindow = nil
@@ -395,38 +395,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateStatusUI()
     }
 
+    /// 設定・チュートリアルで共有するビューモデルを(なければ作って)返す
+    private func ensureSettingsModel() -> SettingsViewModel {
+        if let settingsModel { return settingsModel }
+        let model = SettingsViewModel(store: settingsStore)
+        model.onDesktopIDsChange = { [weak self] ids in
+            guard let self else { return }
+            let added = ids.subtracting(self.enabledDesktopIDs)
+            self.enabledDesktopIDs = ids
+            // 新たに有効化されたLINE/Slackはすぐ検出を走らせる
+            for id in added where SendKeyDetector.supportedBundleIDs.contains(id) {
+                self.probeSendKey(for: id, force: true)
+            }
+            self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
+        }
+        model.onWebIDsChange = { [weak self] ids in
+            guard let self else { return }
+            self.enabledWebIDs = ids
+            self.browserMonitor.isEnabled = !ids.isEmpty
+            self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
+        }
+        model.onCmdEnterSendAppsChange = { [weak self] ids in
+            self?.cmdEnterSendApps = ids
+            self?.recomputeTarget()
+        }
+        model.onRecheckSendKeys = { [weak self] in
+            guard let self else { return }
+            for id in SendKeyDetector.supportedBundleIDs where self.enabledDesktopIDs.contains(id) {
+                self.probeSendKey(for: id, force: true)
+            }
+        }
+        model.openApp = { [weak self] bundleID in
+            guard let self else { return }
+            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+                NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+            }
+            // ユーザーが「確認しにいく」を押した直後なら、読み取り許可ダイアログに
+            // 文脈があるので、LINE/Slackはこのタイミングで自動検出を走らせる
+            self.probeSendKey(for: bundleID, force: true)
+        }
+        model.isAppInstalled = { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil }
+        model.detectedCmdEnterSendApps = detectedCmdEnterSendApps
+        settingsModel = model
+        return model
+    }
+
     @objc private func openSettings() {
         if settingsWindow == nil {
-            let model = SettingsViewModel(store: settingsStore)
-            model.onDesktopIDsChange = { [weak self] ids in
-                guard let self else { return }
-                let added = ids.subtracting(self.enabledDesktopIDs)
-                self.enabledDesktopIDs = ids
-                // 新たに有効化されたLINE/Slackはすぐ検出を走らせる
-                for id in added where SendKeyDetector.supportedBundleIDs.contains(id) {
-                    self.probeSendKey(for: id, force: true)
-                }
-                self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
-            }
-            model.onWebIDsChange = { [weak self] ids in
-                guard let self else { return }
-                self.enabledWebIDs = ids
-                self.browserMonitor.isEnabled = !ids.isEmpty
-                self.updateFrontmost(NSWorkspace.shared.frontmostApplication)
-            }
-            model.onCmdEnterSendAppsChange = { [weak self] ids in
-                self?.cmdEnterSendApps = ids
-                self?.recomputeTarget()
-            }
-            model.onRecheckSendKeys = { [weak self] in
-                guard let self else { return }
-                for id in SendKeyDetector.supportedBundleIDs where self.enabledDesktopIDs.contains(id) {
-                    self.probeSendKey(for: id, force: true)
-                }
-            }
-            model.detectedCmdEnterSendApps = detectedCmdEnterSendApps
-            settingsModel = model
-            settingsWindow = makeWindow(title: "UniEnter 設定", rootView: SettingsView(model: model))
+            settingsWindow = makeWindow(title: "UniEnter 設定",
+                                        rootView: SettingsView(model: ensureSettingsModel()))
         }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

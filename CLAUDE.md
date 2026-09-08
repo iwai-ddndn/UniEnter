@@ -65,7 +65,7 @@ cd site && npm run build
 
 ## 画面スクリーンショット(修正指示・レビュー用)
 
-`screenshots/app/` にアプリの全画面(10画面 × ライト/ダーク = 20枚)と `INDEX.md` が入っている。
+`screenshots/app/` にアプリの全画面(9画面 × ライト/ダーク = 18枚)と `INDEX.md` が入っている。
 **UIの現状を確認したいときは、アプリを起動せずここを見る。**
 
 - 生成: `./scripts/screenshots.sh`。ファイル名は固定で毎回上書きされるため、常に最新
@@ -83,7 +83,7 @@ cd site && npm run build
 
 ## 公開状態(重要)
 
-- **2026-07-22に公開済み**: リポジトリpublic・GitHub Pages有効・リリースv0.2.0(pkg+zip)添付済み
+- **2026-07-22に公開済み**: リポジトリpublic・GitHub Pages有効。最新リリースはv0.3.0(2026-09-08、pkg+zip添付。LPのDLボタンは `releases/latest` 参照なので自動で最新になる)
 - LP: https://unienter.oc-to.com/(利用規約 terms.html / プライバシーポリシー privacy.html も公開済み)
 - リリース: https://github.com/iwai-ddndn/UniEnter/releases
 - コミットメールはGitHub noreplyに統一済み(個人メールをコミットに入れない)。再リリース時は `scripts/release.sh` → `scripts/publish.sh`
@@ -105,7 +105,7 @@ cd site && npm run build
    詳細はObsidian Vaultの `30_Notes/UniEnter/UniEnter-先行テストFB分析（Claude版）.md`(同Fable版もあり)
 2. Paddleアカウント・商品・チェックアウトURL(ユーザー作業)→ 購入ボタン有効化
    - キー自動発行のCloudflare Workerは `license-signing/worker/` に実装済み(署名互換をCryptoKitで検証済み)。Paddleアカウント作成後に `worker/README.md` の手順でデプロイ
-3. `project.yml` の `CFBundleShortVersionString` が `0.1.0` のまま(公開中のリリースはv0.2.0)。次のリリース前に揃える
+3. リリース手順: `project.yml` の `CFBundleShortVersionString` を上げる → `scripts/release.sh X.Y.Z` → `gh release create vX.Y.Z dist/UniEnter.pkg dist/UniEnter.zip`(publish.shは既存リリースへの添付用)
 4. アプリアイコン: ChatGPT生成のダーク版のみ存在。ライト版再生成の指示が保留中。Assets.xcassets組み込みも未実施
 5. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
 6. Chatworkは対象から除外済み(ユーザーが未使用・検証不能のため)。復活させる場合は過去コミット参照

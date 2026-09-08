@@ -65,18 +65,20 @@ enum ScreenshotMode {
                                                 requestPrompt: noop,
                                                 showTroubleshooting: true)) }),
             Shot(name: "03-tutorial-1-keys",
-                 caption: "チュートリアル 1/3 — 覚えるのは2つだけ",
-                 make: { AnyView(TutorialView(openSettings: noop, finish: noop, step: 0)) }),
-            Shot(name: "04-tutorial-2-apps",
-                 caption: "チュートリアル 2/3 — 対象アプリ",
-                 make: { AnyView(TutorialView(openSettings: noop, finish: noop, step: 1)) }),
-            Shot(name: "05-tutorial-3-safety",
-                 caption: "チュートリアル 3/3 — 日本語入力の安全性",
-                 make: { AnyView(TutorialView(openSettings: noop, finish: noop, step: 2)) }),
-            Shot(name: "06-settings",
+                 caption: "チュートリアル 1/2 — 覚えるのは2つだけ",
+                 make: { AnyView(tutorialView(step: 0)) }),
+            Shot(name: "04-tutorial-2-sendkey",
+                 caption: "チュートリアル 2/2 — ⌘Enter送信済みアプリの確認(Slackは自動検出の例)",
+                 make: {
+                     // 自動検出バッジの見え方を確認できるよう、Slackを検出済みの体で撮る
+                     let model = settingsModel()
+                     model.detectedCmdEnterSendApps = [SendKeyDetector.slackBundleID]
+                     return AnyView(tutorialView(step: 1, model: model))
+                 }),
+            Shot(name: "05-settings",
                  caption: "設定(既定状態)",
                  make: { AnyView(SettingsView(model: settingsModel())) }),
-            Shot(name: "07-settings-advanced",
+            Shot(name: "06-settings-advanced",
                  caption: "設定(詳細オプション: アプリ側の送信キー を展開、Slackは自動検出の例)",
                  make: {
                      // 自動検出バッジの見え方を確認できるよう、Slackを検出済みの体で撮る
@@ -85,16 +87,23 @@ enum ScreenshotMode {
                      model.onRecheckSendKeys = noop
                      return AnyView(SettingsView(model: model, showAdvanced: true))
                  }),
-            Shot(name: "08-license-trial",
+            Shot(name: "07-license-trial",
                  caption: "ライセンス(トライアル中・残り11日)",
                  make: { AnyView(LicenseView(model: licenseModel(.trial))) }),
-            Shot(name: "09-license-expired",
+            Shot(name: "08-license-expired",
                  caption: "ライセンス(トライアル終了・書き換え停止中)",
                  make: { AnyView(LicenseView(model: licenseModel(.expired))) }),
-            Shot(name: "10-license-activated",
+            Shot(name: "09-license-activated",
                  caption: "ライセンス(認証済み)",
                  make: { AnyView(LicenseView(model: licenseModel(.licensed))) }),
         ]
+    }
+
+    /// 撮影用のTutorialView。実際のアプリ起動・検出は行わない
+    /// (モデルのopenApp/isAppInstalled未配線 = ボタンは出るが押しても何もしない)
+    @MainActor
+    private static func tutorialView(step: Int, model: SettingsViewModel? = nil) -> TutorialView {
+        TutorialView(model: model ?? settingsModel(), finish: {}, step: step)
     }
 
     // MARK: - 描画
