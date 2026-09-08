@@ -1,8 +1,8 @@
 # UniEnter
 
-どのアプリでも「改行/送信」のEnterキー挙動を統一するmacOSメニューバー常駐アプリ。
+改行と送信、もう間違えない。
 
-**統一後の挙動: Enter = 改行、⌘Enter = 送信**
+どのアプリでも Enterは改行、送信は⌘Enter。macOSメニューバー常駐アプリ。
 
 - **ダウンロード**: [最新リリース](https://github.com/iwai-ddndn/UniEnter/releases/latest)(macOS 13以降。`.pkg`をダブルクリックでインストール、`.zip`版もあり)
 - **価格**: 14日間無料トライアル付き・¥1,480(税込)買い切り。詳細は紹介ページへ
