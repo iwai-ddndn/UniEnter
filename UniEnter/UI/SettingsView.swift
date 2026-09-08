@@ -5,8 +5,18 @@ final class SettingsViewModel: ObservableObject {
     @Published var enabledWebIDs: Set<String>
     @Published var launchAtLogin: Bool
     @Published var cmdEnterSendApps: Set<String>
-    /// アプリの設定ファイルから⌘Enter送信を自動検出したアプリ(AppDelegateが更新。保存はしない)
-    @Published var detectedCmdEnterSendApps: Set<String> = []
+    /// アプリの設定ファイルから読み取った送信キー設定(AppDelegateが更新。保存はしない)。
+    /// bundle IDごとのtri-state(.cmdEnterSend/.standard/.unknown・未検出はキー自体が無い)
+    @Published var detectedSendKeys: [String: SendKeyDetection] = [:]
+
+    /// Enterで改行(送信しない)の設定を自動検出できたアプリ。UniEnterは素通しする
+    var detectedCmdEnterSendApps: Set<String> {
+        Set(detectedSendKeys.filter { $0.value == .cmdEnterSend }.keys)
+    }
+    /// 「Enterで送信」の既定のままと自動検出できたアプリ。手動宣言があっても無視する
+    var detectedStandardApps: Set<String> {
+        Set(detectedSendKeys.filter { $0.value == .standard }.keys)
+    }
 
     private let store: SettingsStore
     var onDesktopIDsChange: ((Set<String>) -> Void)?
@@ -63,7 +73,7 @@ final class SettingsViewModel: ObservableObject {
         launchAtLogin = store.launchAtLogin
     }
 
-    /// そのアプリ自身の設定で送信キーを⌘Enterに変更済みか(＝UniEnterは手を出さない)
+    /// そのアプリ自身の設定でEnter=改行(送信キー=⌘Enter)になっているか(＝UniEnterは手を出さない)
     func alreadyCmdEnter(_ app: TargetApp) -> Binding<Bool> {
         Binding(
             get: { self.cmdEnterSendApps.contains(app.bundleID) },
@@ -142,17 +152,17 @@ struct SettingsView: View {
             Divider()
 
             // ここは「困ったときに自分で見つけられる」ことが最優先。
-            // アプリ側で既に送信キーを⌘Enterにしている人は、UniEnterと二重にかかって
+            // アプリ自身の設定でEnterが「改行」になっている人は、UniEnterと二重にかかって
             // 送信できなくなる。LINE/Slackは設定ファイルから自動検出できる(SendKeyDetector)が、
             // それ以外は外部から検知する手段がないため、症状から辿れる形にしてある。
             DisclosureGroup(isExpanded: $showAdvanced) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("そのアプリ自身の設定で、送信キーをすでに「⌘Enter」に変えていると、UniEnterと二重にかかって送信できなくなります。LINEとSlackは設定を自動で読み取って素通しします(「自動検出」表示)。その他のアプリは「その他のアプリを追加」からチェックを入れると、UniEnterはそのアプリに何もしません。")
+                    Text("そのアプリ自身の設定でEnterを「改行」に変えていると、UniEnterと二重にかかって送信できなくなります。⌘Enterで送信できるかどうかは関係ありません(既定のままでも⌘Enterで送れるアプリが多いです)。LINEとSlackは設定を自動で読み取って素通しします(「自動検出」表示)。その他のアプリは「その他のアプリを追加」からチェックを入れると、UniEnterはそのアプリに何もしません。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("アプリ側で、送信キーを⌘Enterに変更済み:")
+                    Text("アプリ側で、Enterを改行に設定済み:")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .padding(.top, 2)

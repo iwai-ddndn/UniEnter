@@ -90,15 +90,15 @@ struct TutorialView: View {
         }
     }
 
-    // 実際に最初につまずくのがここ。アプリ側で送信キーを⌘Enterに変えていると
+    // 実際に最初につまずくのがここ。アプリ自身の設定でEnterが「改行」になっていると
     // UniEnterと二重にかかって送信できなくなるため、使い始める前に確認してもらう
     private var stepSendKey: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("すでに⌘Enterで送信に設定しているアプリを\n選んでください")
+            Text("Enterで改行(送信しない)に設定している\nアプリを選んでください")
                 .font(.title3.bold())
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
-            Text("アプリ自身の設定で送信キーを「⌘Enter」に変えている場合は、チェックを入れてください。そのアプリにはUniEnterは何もしません(二重にかかるのを防ぎます)。LINEとSlackは設定を自動で読み取ります。")
+            Text("アプリ自身の設定で、Enterキーを「改行」に変えている場合だけチェックしてください。⌘Enterで送信できるかどうかは関係ありません(既定のままでも⌘Enterで送れるアプリが多いです)。チェックしたアプリにはUniEnterは何もしません。LINEとSlackは設定を自動で読み取ります。")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

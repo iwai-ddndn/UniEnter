@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// アプリ側で送信キーを「⌘Enter」に変更済みのアプリを宣言・確認する共通リスト。
+/// アプリ側でEnterを「改行」に設定済みのアプリを宣言・確認する共通リスト。
 /// チュートリアルと設定画面の両方から使う。
 ///
 /// 既定は自動検出できるLINEとSlackの2行(+すでに宣言・検出済みのアプリ)。
@@ -14,8 +14,8 @@ struct SendKeyAppListView: View {
 
     /// アプリ内の送信キー設定がある場所(分かっているものだけ表示)
     private static let sendKeyHints: [String: String] = [
-        SendKeyDetector.lineBundleID: "設定 > トーク > 送信方法",
-        SendKeyDetector.slackBundleID: "環境設定 > 詳細設定",
+        SendKeyDetector.lineBundleID: "設定 > トーク > 送信方法 が「⌘+Enter」なら該当",
+        SendKeyDetector.slackBundleID: "環境設定 > 詳細設定 > 「メッセージ入力時のEnterキー」が「改行を挿入」なら該当",
     ]
 
     init(model: SettingsViewModel) {
@@ -72,10 +72,25 @@ struct SendKeyAppListView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
                 if model.detectedCmdEnterSendApps.contains(app.bundleID) {
+                    // 自動検出: Enterが「改行」になっている → 素通し対象として固定表示
                     Toggle(isOn: .constant(true)) {
                         HStack(spacing: 6) {
                             Text(app.name)
                             Text("自動検出")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Color.secondary.opacity(0.15), in: Capsule())
+                        }
+                    }
+                    .disabled(true)
+                } else if model.detectedStandardApps.contains(app.bundleID) {
+                    // 自動検出: 既定のまま(Enter=送信) → 誤ってチェックできないよう固定表示
+                    Toggle(isOn: .constant(false)) {
+                        HStack(spacing: 6) {
+                            Text(app.name)
+                            Text("自動検出: 既定のまま")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                                 .padding(.horizontal, 5)

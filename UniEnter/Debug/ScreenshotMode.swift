@@ -68,22 +68,30 @@ enum ScreenshotMode {
                  caption: "チュートリアル 1/2 — 覚えるのは2つだけ",
                  make: { AnyView(tutorialView(step: 0)) }),
             Shot(name: "04-tutorial-2-sendkey",
-                 caption: "チュートリアル 2/2 — ⌘Enter送信済みアプリの確認(Slackは自動検出の例)",
+                 caption: "チュートリアル 2/2 — Enter=改行設定のアプリを確認(LINE/Slackとも自動検出の例)",
                  make: {
-                     // 自動検出バッジの見え方を確認できるよう、Slackを検出済みの体で撮る
+                     // 両方の自動検出バッジの見え方を確認できるよう、LINEは「改行」検出・
+                     // Slackは「既定のまま」検出の体で撮る
                      let model = settingsModel()
-                     model.detectedCmdEnterSendApps = [SendKeyDetector.slackBundleID]
+                     model.detectedSendKeys = [
+                         SendKeyDetector.lineBundleID: .cmdEnterSend,
+                         SendKeyDetector.slackBundleID: .standard,
+                     ]
                      return AnyView(tutorialView(step: 1, model: model))
                  }),
             Shot(name: "05-settings",
                  caption: "設定(既定状態)",
                  make: { AnyView(SettingsView(model: settingsModel())) }),
             Shot(name: "06-settings-advanced",
-                 caption: "設定(詳細オプション: アプリ側の送信キー を展開、Slackは自動検出の例)",
+                 caption: "設定(詳細オプション: アプリ側の送信キー を展開、LINE/Slackとも自動検出の例)",
                  make: {
-                     // 自動検出バッジの見え方を確認できるよう、Slackを検出済みの体で撮る
+                     // 両方の自動検出バッジの見え方を確認できるよう、LINEは「改行」検出・
+                     // Slackは「既定のまま」検出の体で撮る
                      let model = settingsModel()
-                     model.detectedCmdEnterSendApps = [SendKeyDetector.slackBundleID]
+                     model.detectedSendKeys = [
+                         SendKeyDetector.lineBundleID: .cmdEnterSend,
+                         SendKeyDetector.slackBundleID: .standard,
+                     ]
                      model.onRecheckSendKeys = noop
                      return AnyView(SettingsView(model: model, showAdvanced: true))
                  }),

@@ -30,10 +30,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var enabledDesktopIDs: Set<String> = []
     /// ブラウザ版で書き換えを有効にするサービス
     private var enabledWebIDs: Set<String> = []
-    /// アプリ側の送信キーが⌘Enter(=既に統一挙動)のアプリ。書き換えを行わない
+    /// アプリ自身の設定でEnter=改行(送信キー=⌘Enter)になっている(=既に統一挙動)アプリ。書き換えを行わない
     private var cmdEnterSendApps: Set<String> = []
-    /// アプリの設定ファイルから⌘Enter送信を自動検出したアプリ(手動宣言とは独立のキャッシュ)
-    private var detectedCmdEnterSendApps: Set<String> = []
+    /// アプリの設定ファイルから読み取った送信キー設定(手動宣言とは独立のキャッシュ)。
+    /// bundle IDごとのtri-state。未検出のアプリはキー自体が無い(= .unknown 相当)
+    private var sendKeyDetections: [String: SendKeyDetection] = [:]
+    /// Enter=改行の設定を自動検出できたアプリ(素通し対象)
+    private var detectedCmdEnterSendApps: Set<String> {
+        Set(sendKeyDetections.filter { $0.value == .cmdEnterSend }.keys)
+    }
+    /// 「Enter=送信」の既定のままと自動検出できたアプリ。手動宣言があっても素通しにしない
+    private var detectedStandardApps: Set<String> {
+        Set(sendKeyDetections.filter { $0.value == .standard }.keys)
+    }
     private let sendKeyDetector = SendKeyDetector()
     /// 設定ファイル読み取り用。macOS 15+の許可ダイアログ待ちで open() が止まるため、
     /// 1アプリの停滞が他アプリの検出を巻き込まないよう並列にする
@@ -294,19 +303,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .flatMap { enabledDesktopIDs.contains($0) ? $0 : nil }
         let webID = webServiceBundleID.flatMap { enabledWebIDs.contains($0) ? $0 : nil }
 
-        // アプリ側の送信キーが⌘Enterのアプリは既に統一挙動なので書き換えない。
-        // 手動宣言と自動検出(SendKeyDetector)の和集合で判定する。
+        // アプリ自身の設定でEnter=改行になっているアプリは既に統一挙動なので書き換えない。
+        // 手動宣言と自動検出(SendKeyDetector)の和集合で判定するが、自動検出が「既定のまま
+        // (Enter=送信)」と分かっているアプリは、古い/誤った手動宣言が残っていても素通しにしない。
         // (Web版はワークスペース/アカウントごとに設定が独立しているため対象外にしない)
         let passthroughApps = cmdEnterSendApps.union(detectedCmdEnterSendApps)
+            .subtracting(detectedStandardApps)
         let nativeNeedsRemap = nativeID.map { !passthroughApps.contains($0) } ?? false
         engine.frontmostChanged(isTarget: nativeNeedsRemap || webID != nil)
 
         if let id = nativeID {
             let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
             if detectedCmdEnterSendApps.contains(id) {
-                currentTargetLabel = "\(name)(⌘Enter送信を自動検出・素通し)"
-            } else if cmdEnterSendApps.contains(id) {
-                currentTargetLabel = "\(name)(⌘Enter送信設定・素通し)"
+                currentTargetLabel = "\(name)(Enter=改行の設定を自動検出・素通し)"
+            } else if passthroughApps.contains(id) {
+                currentTargetLabel = "\(name)(Enter=改行の設定・素通し)"
             } else {
                 currentTargetLabel = name
             }
@@ -347,14 +358,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if detection == .unknown { self.sendKeyProbeGaveUp.insert(bundleID) }
                 self.log.notice("sendkey autodetect \(bundleID, privacy: .public): \(String(describing: detection), privacy: .public)")
 
-                let detected = detection == .cmdEnterSend
-                guard detected != self.detectedCmdEnterSendApps.contains(bundleID) else { return }
-                if detected {
-                    self.detectedCmdEnterSendApps.insert(bundleID)
-                } else {
-                    self.detectedCmdEnterSendApps.remove(bundleID)
-                }
-                self.settingsModel?.detectedCmdEnterSendApps = self.detectedCmdEnterSendApps
+                let previous = self.sendKeyDetections[bundleID] ?? .unknown
+                guard detection != previous else { return }
+                self.sendKeyDetections[bundleID] = detection
+                self.settingsModel?.detectedSendKeys[bundleID] = detection
                 self.recomputeTarget()
             }
         }
@@ -435,7 +442,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.probeSendKey(for: bundleID, force: true)
         }
         model.isAppInstalled = { NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) != nil }
-        model.detectedCmdEnterSendApps = detectedCmdEnterSendApps
+        model.detectedSendKeys = sendKeyDetections
         settingsModel = model
         return model
     }
