@@ -22,6 +22,7 @@ macOSのチャットアプリ全般で「Enter=改行、⌘Enter=送信」に統
 - `notes/` — 内部向けドキュメント(PADDLE-SETUP.md等。docs/はPagesで公開されるため置かない)
 - `marketing/` — リリース告知プランとX投稿用素材(公開リポジトリなので機密は置かない)
 - `screenshots/app/` — アプリ全画面のスクリーンショット(**生成物。手で編集しない**)
+- `design/app-icon/` — アプリアイコンのソース(SVG + CoreGraphicsレンダラ `render.swift`)。OG画像のソースは `site/og.html`(headless Chromeで1200×630に撮影)
 
 ## ビルド・テスト・実行
 
@@ -106,7 +107,7 @@ cd site && npm run build
 2. Paddleアカウント・商品・チェックアウトURL(ユーザー作業)→ 購入ボタン有効化
    - キー自動発行のCloudflare Workerは `license-signing/worker/` に実装済み(署名互換をCryptoKitで検証済み)。Paddleアカウント作成後に `worker/README.md` の手順でデプロイ
 3. リリース手順: `project.yml` の `CFBundleShortVersionString` を上げる → `scripts/release.sh X.Y.Z` → `gh release create vX.Y.Z dist/UniEnter.pkg dist/UniEnter.zip`(publish.shは既存リリースへの添付用)
-4. アプリアイコン: ChatGPT生成のダーク版のみ存在。ライト版再生成の指示が保留中。Assets.xcassets組み込みも未実施
+4. アプリアイコンはフラット版(ティール地に白の↵、`design/app-icon/` がソース。再生成手順は同READMEを参照)に差し替え済み
 5. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
 6. Chatworkは対象から除外済み(ユーザーが未使用・検証不能のため)。復活させる場合は過去コミット参照
 7. FBで要望が出た「設定画面のスクショ付き・軽い使い方ページ」は未着手(`screenshots/app/` の画像が使える)

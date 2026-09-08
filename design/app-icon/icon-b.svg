@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!--
+    UniEnter app icon -- variant B (accent). Installed variant.
+    Teal (#0f7b6c) rounded-square tile with a very subtle top-to-bottom
+    lightening (~6% mix toward white at the top edge, flat-looking, no
+    heavy gradient), white return-arrow glyph. Same glyph geometry as
+    site/public/favicon.svg, scaled onto the standard macOS icon grid.
+    This SVG is a design reference; the installed PNGs are rendered by
+    render.swift for pixel-exact control (see README.md).
+  -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d8375"/>
+      <stop offset="1" stop-color="#0f7b6c"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)"/>
+  <g fill="none" stroke="#ffffff" stroke-width="77.25" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M679.375 370.375 V550.625 H344.625"/>
+    <path d="M447.625 447.625 344.625 550.625 447.625 653.625"/>
+  </g>
+</svg>
