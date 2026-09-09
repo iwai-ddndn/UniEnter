@@ -2,8 +2,9 @@ import { useEffect, useState } from "react"
 
 /* ヒーロー本組み用: 3アプリ同期デモ + キー押下(hero-labの案E) */
 
+/* 「改行」はキーカラーのティール。「送信」は本文色の墨で、対の弁別は⌘キーの有無が担う */
 const NEWLINE = "#0f7b6c"
-const SEND = "#2383e2"
+const SEND = "#37352f"
 const LINE1 = "今日の件ですが、"
 const LINE2 = "資料を添付しました。ご確認ください。"
 
@@ -71,11 +72,11 @@ export type Demo = ReturnType<typeof useChatDemo>
 export function BigKey({ label, active, wide }: { label: string; active: boolean; wide?: boolean }) {
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-2xl border-2 text-2xl font-semibold transition-all duration-150 ${
-        wide ? "min-w-32 px-8" : "min-w-20 px-5"
-      } h-20 ${
+      className={`inline-flex items-center justify-center rounded-2xl border-2 text-xl font-semibold transition-all duration-150 sm:text-2xl ${
+        wide ? "min-w-28 px-6 sm:min-w-32 sm:px-8" : "min-w-16 px-4 sm:min-w-20 sm:px-5"
+      } h-16 sm:h-20 ${
         active
-          ? "translate-y-1.5 border-[#2383e2] bg-[#e7f0fb] shadow-[0_1px_0_#c9ddf5]"
+          ? "translate-y-1.5 border-[#0f7b6c] bg-[#e8f3f0] shadow-[0_1px_0_#c3ded7]"
           : "border-[#d9d9d6] bg-[#fbfbfa] shadow-[0_6px_0_#e0e0dd]"
       }`}
     >
@@ -97,7 +98,7 @@ function Caret({ light }: { light?: boolean }) {
 /* Slack風: ライト・スレッド型(フラットな行 + アバター + 名前) */
 function MiniSlack({ demo }: { demo: Demo }) {
   return (
-    <div className="flex aspect-[2/3] flex-col overflow-hidden rounded-lg border bg-white text-left shadow-sm">
+    <div className="flex aspect-[4/5] flex-col overflow-hidden rounded-lg border bg-white text-left shadow-sm">
       <div className="flex h-7 shrink-0 items-center gap-1.5 border-b px-3" style={{ backgroundColor: "#4A154B" }}>
         <span className="text-[11px] font-semibold text-white"># 進行中プロジェクト</span>
       </div>
@@ -120,7 +121,7 @@ function MiniSlack({ demo }: { demo: Demo }) {
             </div>
           ))}
         </div>
-        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-md border border-[#c9c9c9] px-2 py-1.5 text-[11px] whitespace-pre-line">
+        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-md border-2 border-[#0f7b6c]/35 px-2 py-1.5 text-[11px] whitespace-pre-line">
           {demo.input}
           <Caret />
         </div>
@@ -132,10 +133,10 @@ function MiniSlack({ demo }: { demo: Demo }) {
 /* Discord風: ダークモード・フラットなメッセージリスト */
 function MiniDiscord({ demo }: { demo: Demo }) {
   return (
-    <div className="hidden aspect-[2/3] flex-col overflow-hidden rounded-lg border border-[#26282c] bg-[#313338] text-left text-white shadow-sm sm:flex">
+    <div className="hidden aspect-[4/5] flex-col overflow-hidden rounded-lg border border-[#26282c] bg-[#313338] text-left text-white shadow-sm sm:flex">
       <div className="flex h-7 shrink-0 items-center gap-1.5 border-b border-[#26282c] bg-[#2b2d31] px-3">
         <span className="text-[13px] leading-none text-[#80848e]">#</span>
-        <span className="truncate text-[11px] font-semibold text-neutral-200">作業つうわ</span>
+        <span className="truncate text-[11px] font-semibold text-neutral-200">開発</span>
       </div>
       <div className="flex min-h-0 flex-1 flex-col p-2.5">
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
@@ -156,7 +157,7 @@ function MiniDiscord({ demo }: { demo: Demo }) {
             </div>
           ))}
         </div>
-        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-lg bg-[#383a40] px-2 py-1.5 text-[11px] whitespace-pre-line text-neutral-100">
+        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-lg border-2 border-[#0f7b6c]/45 bg-[#383a40] px-2 py-1.5 text-[11px] whitespace-pre-line text-neutral-100">
           {demo.input}
           <Caret light />
         </div>
@@ -168,7 +169,7 @@ function MiniDiscord({ demo }: { demo: Demo }) {
 /* LINE風: 吹き出し型・青グレー背景に緑バブル */
 function MiniLine({ demo }: { demo: Demo }) {
   return (
-    <div className="flex aspect-[2/3] flex-col overflow-hidden rounded-lg border text-left shadow-sm">
+    <div className="flex aspect-[4/5] flex-col overflow-hidden rounded-lg border text-left shadow-sm">
       <div className="flex h-7 shrink-0 items-center gap-1.5 border-b bg-white px-3">
         <span
           className="flex size-4 shrink-0 items-center justify-center rounded"
@@ -197,7 +198,7 @@ function MiniLine({ demo }: { demo: Demo }) {
             </div>
           ))}
         </div>
-        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-2xl border bg-white px-3 py-1.5 text-[11px] whitespace-pre-line">
+        <div className="mt-2 h-16 shrink-0 overflow-hidden rounded-2xl border-2 border-[#0f7b6c]/35 bg-white px-3 py-1.5 text-[11px] whitespace-pre-line">
           {demo.input}
           <Caret />
         </div>
@@ -210,24 +211,27 @@ function MiniLine({ demo }: { demo: Demo }) {
 export default function HeroDemo() {
   const demo = useChatDemo(false)
   return (
-    <div className="mx-auto max-w-3xl rounded-xl border bg-muted p-5">
+    <div className="mx-auto max-w-3xl rounded-xl border bg-muted p-4 sm:p-5">
       <div className="mx-auto grid w-full max-w-sm grid-cols-2 gap-3 sm:max-w-none sm:grid-cols-3">
         <MiniSlack demo={demo} />
         <MiniDiscord demo={demo} />
         <MiniLine demo={demo} />
       </div>
-      <div className="mt-6 flex items-center justify-center gap-3">
-        {/* 右のラベル領域と同幅のスペーサーでキー列を正確に中央へ */}
-        <div className="mr-2 w-16 sm:w-24" aria-hidden />
-        <BigKey label="⌘" active={demo.pressed === "cmd"} />
-        <BigKey label="Enter" active={demo.pressed === "enter" || demo.pressed === "cmd"} wide />
-        <div className="ml-2 w-16 text-left text-base font-bold sm:w-24 sm:text-xl">
+      {/* 狭い画面ではキーを中央に置き、結果ラベルはその下へ。
+          sm以上は右のラベルと同幅のスペーサーでキー列を正確に中央へ */}
+      <div className="mt-5 flex flex-col items-center gap-2 sm:mt-6 sm:flex-row sm:justify-center sm:gap-3">
+        <div className="mr-2 hidden w-24 shrink-0 sm:block" aria-hidden />
+        <div className="flex items-center gap-3">
+          <BigKey label="⌘" active={demo.pressed === "cmd"} />
+          <BigKey label="Enter" active={demo.pressed === "enter" || demo.pressed === "cmd"} wide />
+        </div>
+        <div className="ml-0 h-7 shrink-0 text-lg font-bold sm:ml-2 sm:h-auto sm:w-24 sm:text-left sm:text-xl">
           {demo.action === "newline" && <span style={{ color: NEWLINE }}>↵ 改行</span>}
           {demo.action === "send" && <span style={{ color: SEND }}>✈ 送信</span>}
         </div>
       </div>
-      <p className="mt-4 text-center text-sm text-muted-foreground">
-        どのアプリでも、同じ操作。
+      <p className="mt-3 text-center text-sm text-muted-foreground">
+        ⌘ は Command キーです。
       </p>
     </div>
   )

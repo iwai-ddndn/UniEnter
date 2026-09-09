@@ -5,7 +5,7 @@ let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
 let assetDirectory = root.appendingPathComponent("marketing/launch/assets", isDirectory: true)
 let keyboardURL = assetDirectory.appendingPathComponent("keyboard-enter-source.png")
 let iconURL = root.appendingPathComponent("UniEnter/Assets.xcassets/AppIcon.appiconset/icon_1024.png")
-let imeURL = root.appendingPathComponent("site/public/assets/feature-ime.png")
+let imeURL = assetDirectory.appendingPathComponent("feature-ime.png")
 
 let ink = NSColor(calibratedRed: 55 / 255, green: 53 / 255, blue: 47 / 255, alpha: 1)
 let muted = NSColor(calibratedRed: 115 / 255, green: 114 / 255, blue: 110 / 255, alpha: 1)

@@ -34,6 +34,7 @@ export type Service = {
 export const services: Service[] = [
   { name: "Slack", hex: "4A154B", path: slackPath, initial: "S", desktop: true, web: true },
   { name: "Microsoft Teams", hex: "6264A7", path: microsoftTeamsPath, initial: "T", desktop: true, web: true },
+  { name: "Teams (classic)", hex: "6264A7", path: microsoftTeamsPath, initial: "T", desktop: true, web: false },
   { name: "LINE", hex: siLine.hex, path: siLine.path, desktop: true, web: false },
   { name: "oVice", hex: "1F2937", initial: "o", desktop: true, web: false },
   { name: "ChatGPT", hex: "10A37F", path: openaiPath, initial: "G", desktop: true, web: true },

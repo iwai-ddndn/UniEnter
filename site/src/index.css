@@ -9,7 +9,9 @@
   --card-foreground: #37352f;
   --popover: #ffffff;
   --popover-foreground: #37352f;
-  --primary: #37352f;
+  /* キーカラー = ティール #0f7b6c(アプリアイコンと同じ)。CTA・リンク・「改行」・フォーカスのみに使い、
+     面や見出しには使わない(画面占有5%以下) */
+  --primary: #0f7b6c;
   --primary-foreground: #ffffff;
   --secondary: #f1f1ef;
   --secondary-foreground: #37352f;
@@ -20,7 +22,7 @@
   --destructive: #d44c47;
   --border: #e6e6e4;
   --input: #e6e6e4;
-  --ring: #2383e2;
+  --ring: #0f7b6c;
   --radius: 0.5rem;
 }
 

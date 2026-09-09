@@ -46,7 +46,7 @@ T0 = GO条件が揃った週の火曜。第一候補は 7/28(火)、無理なら
 ### T-1 公開予告
 
 ```text
-改行と送信、もう間違えない。
+Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。
 
 Enterはいつでも改行。
 送信は⌘Enter。
@@ -57,7 +57,7 @@ SlackもChatGPTもClaudeも、アプリごとに操作を覚え直さなくて�
 ### T0 メイン投稿
 
 ```text
-改行と送信、もう間違えない。
+Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。
 macOSアプリ「UniEnter」を公開しました。
 
 Enterはいつでも改行。
@@ -65,7 +65,7 @@ Enterはいつでも改行。
 
 SlackもTeamsも、ChatGPTもClaudeも。
 どのアプリでも Enterは改行、送信は⌘Enter。
-改行と送信、もう間違えない。
+Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。
 
 日本語変換中のEnterには触れません。
 #Mac #個人開発

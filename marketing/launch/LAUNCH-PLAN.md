@@ -11,7 +11,7 @@ UniEnterは機能一覧から説明するより、最初の1秒で次の2行を�
 - Enter → 改行
 - ⌘Enter → 送信
 
-Xでは画像と投稿冒頭をLPの「改行と送信、もう間違えない。」に揃え、投稿からLPへ移ったときに同じ製品だと一瞬で認識できるようにする。「改行のつもりで途中の文章を送ってしまう」という共感フックは、翌日の引用投稿や制作ストーリーで使う。リンク・価格・対応環境は直後のセルフリプライに分ける。これはアルゴリズム対策を断定するものではなく、主投稿を読みやすくし、参考投稿と同じく画像の第一印象を強くするための構成。
+Xでは画像と投稿冒頭をLPの「Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。」に揃え、投稿からLPへ移ったときに同じ製品だと一瞬で認識できるようにする。「改行のつもりで途中の文章を送ってしまう」という共感フックは、翌日の引用投稿や制作ストーリーで使う。リンク・価格・対応環境は直後のセルフリプライに分ける。これはアルゴリズム対策を断定するものではなく、主投稿を読みやすくし、参考投稿と同じく画像の第一印象を強くするための構成。
 
 本公開の前提は、Paddleの購入導線、公開LP、ダウンロード、Developer ID署名と公証がすべて動くこと。アクセシビリティ権限を使うアプリなので、公証前の警告が出る状態で大きく宣伝すると信頼とインストール完了率を落としやすい。公証前に出す場合は「正式リリース」ではなく、人数を絞った「先行テスト」として扱う。
 
@@ -82,12 +82,12 @@ Macのチャットアプリ全部で、Enterを改行、⌘Enterを送信に統�
 添付: `assets/x-launch-main-1600x900.png` を1枚
 
 ```text
-改行と送信、もう間違えない。
+Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。
 macOSアプリ「UniEnter」を公開しました。
 
 Enterはいつでも改行、送信は⌘Enter。
 
-SlackもTeamsも、ChatGPTもClaudeも同じ操作に。改行と送信、もう間違えない。
+SlackもTeamsも、ChatGPTもClaudeも同じ操作に。
 
 日本語変換中のEnterは、そのままです。
 #Mac #個人開発
@@ -136,7 +136,7 @@ UniEnterは、そういう「アプリごとの差」をMac側でなくします
 添付: `assets/x-launch-how-1600x900.png`
 
 ```text
-改行と送信、もう間違えない。
+Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。
 そんなmacOSアプリを作っています。
 
 Enterはいつでも改行、送信は⌘Enter。
@@ -149,11 +149,11 @@ SlackもChatGPTもClaudeも、もうアプリごとに覚え直さなくてい�
 セルフリプライを見ない人にも確実にURLを届けたい場合はこちら。メイン画像は同じ。
 
 ```text
-改行と送信、もう間違えない。
+Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。
 macOSアプリ「UniEnter」を公開しました。
 
 Enterはいつでも改行、送信は⌘Enter。
-SlackもChatGPTもClaudeも同じ操作に。改行と送信、もう間違えない。
+SlackもChatGPTもClaudeも同じ操作に。
 
 14日間無料
 https://iwai-ddndn.github.io/UniEnter/?utm_source=x&utm_medium=social&utm_campaign=launch_v020&utm_content=main
@@ -166,7 +166,7 @@ https://iwai-ddndn.github.io/UniEnter/?utm_source=x&utm_medium=social&utm_campai
 `x-launch-main-1600x900.png`:
 
 ```text
-白いMacキーボードの文字キー領域右端にあるReturnキーとUniEnterのアイコン。「改行と送信、もう間違えない。」という見出し。右側に「Enterは改行」「⌘Enterは送信」、Slack・Teams・ChatGPT・Claudeなどで同じ操作になることを図解している。
+白いMacキーボードの文字キー領域右端にあるReturnキーとUniEnterのアイコン。「Enterは改行、送信は⌘Enter。Macのチャット、ぜんぶで。」という見出し。右側に「Enterは改行」「⌘Enterは送信」、Slack・Teams・ChatGPT・Claudeなどで同じ操作になることを図解している。
 ```
 
 `x-launch-safety-1600x900.png`:

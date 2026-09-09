@@ -4,7 +4,7 @@ import { CornerDownLeft } from "lucide-react"
 import { useEffect, useState } from "react"
 
 const NEWLINE = "#0f7b6c"
-const SEND = "#2383e2"
+const SEND = "#37352f"
 const LINE1 = "今日の件ですが、"
 const LINE2 = "資料を添付しました。ご確認ください。"
 
@@ -72,7 +72,7 @@ function MiniKey({ label, active }: { label: string; active: boolean }) {
     <span
       className={`inline-flex min-w-9 items-center justify-center rounded-md border px-2 py-1 text-xs font-semibold transition-all duration-150 ${
         active
-          ? "translate-y-0.5 border-[#2383e2] bg-[#e7f0fb] shadow-none"
+          ? "translate-y-0.5 border-[#0f7b6c] bg-[#e8f3f0] shadow-none"
           : "border-[#d9d9d6] bg-[#fbfbfa] shadow-[0_2px_0_#e0e0dd]"
       }`}
     >
@@ -180,7 +180,7 @@ function BigKey({ label, active, wide }: { label: string; active: boolean; wide?
         wide ? "min-w-32 px-8" : "min-w-20 px-5"
       } h-20 ${
         active
-          ? "translate-y-1.5 border-[#2383e2] bg-[#e7f0fb] shadow-[0_1px_0_#c9ddf5]"
+          ? "translate-y-1.5 border-[#0f7b6c] bg-[#e8f3f0] shadow-[0_1px_0_#c3ded7]"
           : "border-[#d9d9d6] bg-[#fbfbfa] shadow-[0_6px_0_#e0e0dd]"
       }`}
     >
