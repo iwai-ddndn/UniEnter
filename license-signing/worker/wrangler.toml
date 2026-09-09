@@ -8,8 +8,8 @@ binding = "LICENSES"
 id = "TODO_KV_NAMESPACE_ID"
 
 [vars]
-# 本番: https://api.paddle.com / サンドボックス: https://sandbox-api.paddle.com
-PADDLE_API_BASE = "https://api.paddle.com"
+# 本番: https://api.polar.sh / サンドボックス: https://sandbox-api.polar.sh
+POLAR_API_BASE = "https://api.polar.sh"
 # LicenseManager.publicKeyBase64 と同値(公開情報)
 LICENSE_PUBLIC_KEY = "GnuD4CdMgZHXooBnItp7HxOZUQD7Ai/fURl0oqidhXk="
 # Resend利用時のみ(ドメイン認証済みの送信元)

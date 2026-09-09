@@ -1,21 +1,24 @@
-// UniEnter ライセンス自動発行 Worker(Paddle Billing Webhook)
+// UniEnter ライセンス自動発行 Worker(Polar.sh Webhook)
 //
 // エンドポイント:
-//   POST /paddle/webhook  Paddleの transaction.completed を受けてキーを発行しKVへ保存
-//                         (RESEND_API_KEY 設定時は購入者へメール送信)
-//   GET  /license?txn=ID  チェックアウト完了ページ向け。キーを表示(未発行なら
-//                         Paddle APIで取引を検証してその場で発行)
+//   POST /polar/webhook           Polarの order.paid を受けてキーを発行しKVへ保存
+//                                 (RESEND_API_KEY 設定時は購入者へメール送信)
+//   GET  /license?checkout_id=ID  チェックアウト完了ページ向け。キーを表示。
+//                                 ?order=ID でも同様に引ける(エイリアス)。
+//                                 未発行かつWebhook未着の場合は自動更新ページを返し、
+//                                 POLAR_ACCESS_TOKEN があればチェックアウトAPIで
+//                                 その場発行も試みる(Webhookとのレース対策)
 //
 // シークレット(wrangler secret put):
-//   PADDLE_WEBHOOK_SECRET  Paddle通知先(Notification destination)のsecret
-//   PADDLE_API_KEY         Paddle APIキー(customers/transactions読み取り)
+//   POLAR_WEBHOOK_SECRET   Polar Webhookエンドポイント作成時に発行される secret(whsec_...)
+//   POLAR_ACCESS_TOKEN     Polar Organization access token(customers/checkouts読み取り、任意)
 //   LICENSE_PRIVATE_KEY    keys.txt の PRIVATE: 行のbase64(Ed25519シード32byte)
 //   RESEND_API_KEY         任意。設定するとメール送信も行う
 // 変数(wrangler.toml [vars]):
-//   PADDLE_API_BASE        https://api.paddle.com(sandboxは https://sandbox-api.paddle.com)
+//   POLAR_API_BASE         https://api.polar.sh(sandboxは https://sandbox-api.polar.sh)
 //   LICENSE_PUBLIC_KEY     公開鍵base64(LicenseManager.publicKeyBase64と同値)
 //   MAIL_FROM              メール送信元(例: "UniEnter <license@oc-to.com>")
-// KV: LICENSES
+// KV: LICENSES(キーは order:<order_id> と checkout:<checkout_id> の2本立てで同じレコードを保存)
 
 const encoder = new TextEncoder()
 
@@ -27,6 +30,13 @@ function bytesToB64url(bytes) {
 
 function b64ToB64url(b64) {
   return b64.replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")
+}
+
+function b64ToBytes(b64) {
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return bytes
 }
 
 // keys.txtのシードと公開鍵からJWKを組み立ててWebCryptoに読ませる
@@ -49,38 +59,77 @@ async function issueLicenseKey(env, email) {
   return `UNIENTER-${bytesToB64url(payloadBytes)}.${bytesToB64url(sig)}`
 }
 
-// Paddle-Signature: "ts=1671552777;h1=..." / 署名対象は `${ts}:${rawBody}`
-async function verifyPaddleSignature(env, rawBody, header) {
-  if (!header) return false
-  const parts = Object.fromEntries(header.split(";").map((p) => p.split("=")))
-  const ts = parts.ts
-  const h1 = parts.h1
-  if (!ts || !h1) return false
-  if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false
+async function hmacSha256(keyBytes, messageBytes) {
+  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"])
+  return new Uint8Array(await crypto.subtle.sign("HMAC", key, messageBytes))
+}
 
-  const hmacKey = await crypto.subtle.importKey(
-    "raw", encoder.encode(env.PADDLE_WEBHOOK_SECRET),
-    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
-  )
-  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", hmacKey, encoder.encode(`${ts}:${rawBody}`)))
-  const hex = [...mac].map((b) => b.toString(16).padStart(2, "0")).join("")
-  // 長さ一致+全桁比較(早期returnしない)
-  if (hex.length !== h1.length) return false
+// 長さ一致+全桁比較(早期returnしない)
+function constantTimeEqual(a, b) {
+  if (a.length !== b.length) return false
   let diff = 0
-  for (let i = 0; i < hex.length; i++) diff |= hex.charCodeAt(i) ^ h1.charCodeAt(i)
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i]
   return diff === 0
 }
 
-async function paddleGet(env, path) {
-  const res = await fetch(`${env.PADDLE_API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${env.PADDLE_API_KEY}` },
+// Standard Webhooks形式の署名検証
+// ヘッダ: webhook-id / webhook-timestamp(unix秒) / webhook-signature("v1,<base64>"のスペース区切り、複数可)
+// 署名対象: `${webhook-id}.${webhook-timestamp}.${rawBody}` のHMAC-SHA256
+// secretは2種類の解釈を両方試す(Polar SDKと同じ振る舞い):
+//   新形式: "whsec_"以降をbase64デコードしたバイト列をHMACキーにする(2026-09-08以降に発行された secret)
+//   旧形式: "whsec_"込みの文字列全体をUTF-8バイト列としてHMACキーにする(それ以前の secret)
+async function verifyPolarSignature(env, rawBody, headers) {
+  const id = headers.get("webhook-id")
+  const timestamp = headers.get("webhook-timestamp")
+  const signatureHeader = headers.get("webhook-signature")
+  if (!id || !timestamp || !signatureHeader) return false
+
+  const now = Math.floor(Date.now() / 1000)
+  if (!Number.isFinite(Number(timestamp)) || Math.abs(now - Number(timestamp)) > 300) return false
+
+  const secret = env.POLAR_WEBHOOK_SECRET ?? ""
+  if (!secret.startsWith("whsec_")) return false
+  const secretBody = secret.slice("whsec_".length)
+
+  const candidateKeys = []
+  try {
+    candidateKeys.push(b64ToBytes(secretBody)) // 新形式
+  } catch {
+    // secretBodyがbase64として不正なら新形式の候補はスキップ
+  }
+  candidateKeys.push(encoder.encode(secret)) // 旧形式(whsec_込み全体)
+
+  const message = encoder.encode(`${id}.${timestamp}.${rawBody}`)
+  const providedSigs = signatureHeader
+    .split(" ")
+    .map((entry) => entry.split(",")[1])
+    .filter(Boolean)
+
+  for (const keyBytes of candidateKeys) {
+    const mac = await hmacSha256(keyBytes, message)
+    for (const sigB64 of providedSigs) {
+      let sigBytes
+      try {
+        sigBytes = b64ToBytes(sigB64)
+      } catch {
+        continue
+      }
+      if (constantTimeEqual(mac, sigBytes)) return true
+    }
+  }
+  return false
+}
+
+async function polarGet(env, path) {
+  const res = await fetch(`${env.POLAR_API_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}` },
   })
-  if (!res.ok) throw new Error(`Paddle API ${path} -> ${res.status}`)
-  return (await res.json()).data
+  if (!res.ok) throw new Error(`Polar API ${path} -> ${res.status}`)
+  return res.json()
 }
 
 async function customerEmail(env, customerId) {
-  const customer = await paddleGet(env, `/customers/${customerId}`)
+  const customer = await polarGet(env, `/v1/customers/${customerId}`)
   return customer.email
 }
 
@@ -113,34 +162,49 @@ async function sendLicenseMail(env, email, licenseKey) {
   })
 }
 
-// 取引IDからキーを取得(未発行ならPaddle APIで確認して発行)
-async function licenseForTransaction(env, txnId) {
-  if (!/^txn_[a-z0-9]+$/i.test(txnId)) return null
-  const cached = await env.LICENSES.get(`txn:${txnId}`, "json")
-  if (cached) return cached
+// KVからレコードを引く。checkout_id優先、無ければorder_idとしても引く(?order=エイリアス対応)
+async function lookupRecord(env, id) {
+  if (!id) return null
+  const byCheckout = await env.LICENSES.get(`checkout:${id}`, "json")
+  if (byCheckout) return byCheckout
+  return env.LICENSES.get(`order:${id}`, "json")
+}
 
-  const txn = await paddleGet(env, `/transactions/${txnId}`)
-  if (!["completed", "paid"].includes(txn.status)) return null
-  const email = await customerEmail(env, txn.customer_id)
+// Webhookがまだ届いていない場合のレース対策。POLAR_ACCESS_TOKENがあれば
+// チェックアウトAPIを直接確認し、支払い済みならその場でキーを発行する
+async function tryIssueFromCheckout(env, checkoutId) {
+  if (!checkoutId || !env.POLAR_ACCESS_TOKEN) return null
+  let checkout
+  try {
+    checkout = await polarGet(env, `/v1/checkouts/${checkoutId}`)
+  } catch {
+    return null
+  }
+  if (checkout.status !== "succeeded") return null
+  const email = checkout.customer_email
+  if (!email) return null
+
   const licenseKey = await issueLicenseKey(env, email)
   const record = { email, key: licenseKey, issuedAt: new Date().toISOString() }
-  await env.LICENSES.put(`txn:${txnId}`, JSON.stringify(record))
+  await env.LICENSES.put(`checkout:${checkoutId}`, JSON.stringify(record))
+  if (checkout.order_id) {
+    await env.LICENSES.put(`order:${checkout.order_id}`, JSON.stringify(record))
+  }
   return record
 }
 
-function licensePage(record) {
-  const body = record
-    ? `<h1>ご購入ありがとうございます</h1>
-       <p>あなたのライセンスキー(<strong>${escapeHtml(record.email)}</strong> 宛に発行):</p>
-       <pre>${escapeHtml(record.key)}</pre>
-       <p>メニューバーの UniEnter → ライセンス にキーを貼り付けて有効化してください。<br>
-       このページのURLを保存しておけば、あとからキーを再表示できます。</p>`
-    : `<h1>ライセンスキーを表示できません</h1>
-       <p>決済が確認できませんでした。数分おいて再読み込みするか、
-       info@oc-to.com までお問い合わせください。</p>`
+function escapeHtml(s) {
+  return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+}
+
+function htmlPage(body, refreshUrl) {
+  const refreshTag = refreshUrl
+    ? `<meta http-equiv="refresh" content="5;url=${escapeHtml(refreshUrl)}">`
+    : ""
   return new Response(
     `<!doctype html><html lang="ja"><head><meta charset="utf-8">
      <meta name="viewport" content="width=device-width, initial-scale=1">
+     ${refreshTag}
      <title>UniEnter ライセンス</title>
      <style>
        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#37352f;
@@ -155,45 +219,93 @@ function licensePage(record) {
   )
 }
 
-function escapeHtml(s) {
-  return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+function licensePage(record) {
+  return htmlPage(`<h1>ご購入ありがとうございます</h1>
+       <p>あなたのライセンスキー(<strong>${escapeHtml(record.email)}</strong> 宛に発行):</p>
+       <pre>${escapeHtml(record.key)}</pre>
+       <p>メニューバーの UniEnter → ライセンス にキーを貼り付けて有効化してください。<br>
+       このページのURLを保存しておけば、あとからキーを再表示できます。</p>`)
+}
+
+// 発行中(Webhook未着)ページ。?n=で再読み込み回数を持ち回り、最大12回(約1分)で諦める
+function pendingPage(checkoutId, n) {
+  if (n < 12) {
+    const nextUrl = `/license?checkout_id=${encodeURIComponent(checkoutId)}&n=${n + 1}`
+    return htmlPage(
+      `<h1>発行中です</h1>
+       <p>決済の確認とキーの発行に数秒かかることがあります。<br>
+       このページは自動的に再読み込みされます(数秒後に再読み込みしてください)。</p>`,
+      nextUrl,
+    )
+  }
+  return htmlPage(
+    `<h1>ライセンスキーを表示できません</h1>
+     <p>決済が確認できませんでした。お手数ですが info@oc-to.com まで
+     ご購入時のメールアドレスとあわせてお問い合わせください。</p>`,
+  )
+}
+
+function notFoundPage() {
+  return htmlPage(
+    `<h1>ライセンスキーを表示できません</h1>
+     <p>URLに誤りがある可能性があります。info@oc-to.com までお問い合わせください。</p>`,
+  )
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
 
-    if (request.method === "POST" && url.pathname === "/paddle/webhook") {
+    if (request.method === "POST" && url.pathname === "/polar/webhook") {
       const rawBody = await request.text()
-      const ok = await verifyPaddleSignature(env, rawBody, request.headers.get("Paddle-Signature"))
+      const ok = await verifyPolarSignature(env, rawBody, request.headers)
       if (!ok) return new Response("invalid signature", { status: 401 })
 
       const event = JSON.parse(rawBody)
-      if (event.event_type === "transaction.completed") {
-        const txnId = event.data.id
-        const existing = await env.LICENSES.get(`txn:${txnId}`)
-        if (!existing) {
-          const email = await customerEmail(env, event.data.customer_id)
-          const licenseKey = await issueLicenseKey(env, email)
-          await env.LICENSES.put(
-            `txn:${txnId}`,
-            JSON.stringify({ email, key: licenseKey, issuedAt: new Date().toISOString() }),
-          )
-          await sendLicenseMail(env, email, licenseKey)
-        }
+      if (event.type !== "order.paid") {
+        // order.created / checkout.* 等は無視(200で返し再送を止める)
+        return new Response("ignored")
       }
+
+      const order = event.data
+      const orderId = order.id
+      const existing = await env.LICENSES.get(`order:${orderId}`)
+      if (!existing) {
+        let email = order.customer?.email ?? null
+        if (!email && order.customer_id && env.POLAR_ACCESS_TOKEN) {
+          email = await customerEmail(env, order.customer_id)
+        }
+        if (!email) {
+          // メールが取れない場合は発行できない。Polarの再送(最大10回)に賭けて非200を返す
+          return new Response("email unresolved", { status: 500 })
+        }
+
+        const licenseKey = await issueLicenseKey(env, email)
+        const record = { email, key: licenseKey, issuedAt: new Date().toISOString() }
+        await env.LICENSES.put(`order:${orderId}`, JSON.stringify(record))
+        if (order.checkout_id) {
+          await env.LICENSES.put(`checkout:${order.checkout_id}`, JSON.stringify(record))
+        }
+        await sendLicenseMail(env, email, licenseKey)
+      }
+      // 既発行(リトライ配送)でも200を返して冪等に扱う
       return new Response("ok")
     }
 
     if (request.method === "GET" && url.pathname === "/license") {
-      const txnId = url.searchParams.get("txn") ?? ""
-      let record = null
-      try {
-        record = await licenseForTransaction(env, txnId)
-      } catch {
-        record = null
+      const id = url.searchParams.get("checkout_id") ?? url.searchParams.get("order") ?? ""
+      const n = Number(url.searchParams.get("n") ?? "0")
+      if (!id) return notFoundPage()
+
+      let record = await lookupRecord(env, id)
+      if (!record) {
+        try {
+          record = await tryIssueFromCheckout(env, id)
+        } catch {
+          record = null
+        }
       }
-      return licensePage(record)
+      return record ? licensePage(record) : pendingPage(id, n)
     }
 
     return new Response("not found", { status: 404 })
