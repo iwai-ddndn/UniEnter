@@ -24,6 +24,7 @@
 | Claude | ○ | claude.ai |
 | Gemini | —(ID確認中) | gemini.google.com |
 | Messenger | ○(廃止済みアプリの残存向け) | messenger.com / facebook.com/messages |
+| oVice | ○(デスクトップアプリ) | ×(Web版は未対応) |
 | X | — | x.com/messages(DMのみ) |
 | Instagram | — | instagram.com/direct(DMのみ) |
 

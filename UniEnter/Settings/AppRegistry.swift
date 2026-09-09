@@ -17,6 +17,8 @@ enum AppRegistry {
         TargetApp(name: "Slack", bundleID: "com.tinyspeck.slackmacgap"),
         TargetApp(name: "Discord", bundleID: "com.hnc.Discord"),
         TargetApp(name: "LINE", bundleID: "jp.naver.line.mac", hasWeb: false),
+        // バーチャルオフィス。チャットは送信ボタン/⌘Enter。デスクトップアプリのみ対象(Web版は空間操作のキーと衝突しうるため未対応)
+        TargetApp(name: "oVice", bundleID: "com.ovice.desktop.prod", hasWeb: false),
         // 2026年7月のCodex統合後の現行ChatGPT.app。旧ChatGPT Classicはaliasesで対応
         TargetApp(name: "ChatGPT", bundleID: "com.openai.codex"),
         TargetApp(name: "Claude", bundleID: "com.anthropic.claudefordesktop"),
