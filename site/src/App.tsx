@@ -185,15 +185,16 @@ export default function App() {
           メニューバーに常駐・14日間無料・買い切り
         </Badge>
         <h1 className="text-2xl leading-snug font-bold sm:text-5xl sm:leading-snug">
-          Enterは改行、
-          {/* 狭い画面では「送信は⌘Enter。」を独立した行に落とす(単語の途中で折れるのを防ぐ) */}
+          Enterで送信するのは、
+          {/* 狭い画面では「もう終わり。」を独立した行に落とす */}
           <br className="sm:hidden" />
-          送信は⌘Enter。
-          <br />
-          Macのチャット、ぜんぶで。
+          もう終わり。
         </h1>
-        <p className="mx-auto mt-5 max-w-lg text-muted-foreground">
-          アプリごとの設定画面を開いて回る必要はありません。起動しておくだけで、対象アプリがすべて同じ操作に揃います。
+        {/* サブコピー: 仕組みを1行で。H1は宣言、ここで中身を言う */}
+        <p className="mx-auto mt-4 max-w-lg text-base font-medium sm:text-xl">
+          Enterは改行、送信は⌘Enter。
+          <br className="sm:hidden" />
+          Macのチャット、ぜんぶで。
         </p>
 
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
