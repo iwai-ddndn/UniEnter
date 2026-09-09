@@ -19,8 +19,8 @@ targets:
       path: UniEnter/Info.plist
       properties:
         CFBundleDisplayName: UniEnter
-        CFBundleShortVersionString: "0.3.1"
-        CFBundleVersion: "4"
+        CFBundleShortVersionString: "0.3.2"
+        CFBundleVersion: "5"
         LSUIElement: true
         NSPrincipalClass: NSApplication
         NSHumanReadableCopyright: "© 2026 octo (oc-to.com)"

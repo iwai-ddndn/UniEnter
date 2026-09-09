@@ -1,0 +1,14 @@
+#!/bin/bash
+# pkgインストール完了後にUniEnterを起動する。
+# インストーラはroot権限で走るので、ログイン中のユーザーとして open する
+# (rootで起動するとアクセシビリティ許可やUserDefaultsが別ユーザー扱いになる)。
+APP="/Applications/UniEnter.app"
+CONSOLE_USER=$(/usr/bin/stat -f%Su /dev/console)
+CONSOLE_UID=$(/usr/bin/id -u "$CONSOLE_USER" 2>/dev/null)
+if [ -d "$APP" ] && [ -n "$CONSOLE_UID" ] && [ "$CONSOLE_USER" != "root" ]; then
+  # 旧バージョンが常駐中なら終了してから起動(更新インストールの場合)
+  /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/sudo -u "$CONSOLE_USER" /usr/bin/osascript -e 'tell application id "dev.iwai.UniEnter" to quit' >/dev/null 2>&1 || true
+  sleep 1
+  /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/sudo -u "$CONSOLE_USER" /usr/bin/open "$APP" || true
+fi
+exit 0

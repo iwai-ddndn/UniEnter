@@ -19,10 +19,12 @@ rm -f dist/UniEnter.zip dist/UniEnter.pkg
 ditto -c -k --keepParent "$APP" dist/UniEnter.zip
 
 # pkg(ダブルクリックで/Applicationsへインストール)
+# --scripts: インストール完了後に postinstall でアプリを自動起動する
 pkgbuild --component "$APP" \
   --install-location /Applications \
   --identifier dev.iwai.UniEnter \
   --version "$VERSION" \
+  --scripts scripts/pkg-scripts \
   dist/UniEnter-component.pkg
 productbuild --synthesize --package dist/UniEnter-component.pkg dist/distribution.xml
 # インストーラのタイトルを設定
