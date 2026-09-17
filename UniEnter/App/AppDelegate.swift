@@ -128,10 +128,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if type == .keyDown {
                 let isPhysical = event.getIntegerValueField(.eventSourceStateID) == 1
                 let wasComposing = engine.isComposing
-                action = engine.keyDown(keycode: keycode, mods: mods, isPhysical: isPhysical)
+                let wasSuggesting = engine.isSuggesting
+                action = engine.keyDown(
+                    keycode: keycode, mods: mods, isPhysical: isPhysical,
+                    characters: Self.characters(of: event)
+                )
                 if keycode == 36 || keycode == 76 {
                     // 切り分け用: Enterの判定内訳を残す(log show で確認可能なnoticeレベル)
-                    log.notice("return keyDown mods=\(mods.rawValue) physical=\(isPhysical) target=\(self.engine.isTargetAppActive) ja=\(self.engine.isJapaneseMode) composing=\(wasComposing) -> \(String(describing: action), privacy: .public)")
+                    log.notice("return keyDown mods=\(mods.rawValue) physical=\(isPhysical) target=\(self.engine.isTargetAppActive) ja=\(self.engine.isJapaneseMode) composing=\(wasComposing) suggesting=\(wasSuggesting) -> \(String(describing: action), privacy: .public)")
                 }
             } else {
                 action = engine.keyUp(keycode: keycode, mods: mods)
@@ -141,6 +145,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         default:
             return event
         }
+    }
+
+    /// キーボード配列上でそのキーが生成する文字(IMEを通す前の値)。候補ポップアップの
+    /// トリガー文字(`@`等)判定用。イベント自身が持つデータの読み出しでIPCは発生しない
+    private static func characters(of event: CGEvent) -> String {
+        var buffer = [UniChar](repeating: 0, count: 4)
+        var length = 0
+        event.keyboardGetUnicodeString(maxStringLength: buffer.count, actualStringLength: &length, unicodeString: &buffer)
+        guard length > 0 else { return "" }
+        return String(utf16CodeUnits: buffer, count: length)
     }
 
     private static func modifiers(from flags: CGEventFlags) -> RemapEngine.Modifiers {

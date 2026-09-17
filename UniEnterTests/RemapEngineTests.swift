@@ -191,3 +191,237 @@ final class RemapEngineTests: XCTestCase {
         XCTAssertTrue(engine.isComposing)
     }
 }
+
+// MARK: - 候補ポップアップ(@メンション等)のEnter素通し
+
+final class RemapEngineSuggestionTests: XCTestCase {
+
+    private var engine: RemapEngine!
+
+    private let returnKey: Int64 = 36
+    private let keypadEnter: Int64 = 76
+    private let space: Int64 = 49
+    private let tab: Int64 = 48
+    private let escape: Int64 = 53
+    private let backspace: Int64 = 51
+    private let leftArrow: Int64 = 123
+    private let downArrow: Int64 = 125
+    private let upArrow: Int64 = 126
+
+    override func setUp() {
+        super.setUp()
+        engine = RemapEngine()
+        engine.isEnabled = true
+        engine.isTargetAppActive = true
+        engine.isJapaneseMode = false
+    }
+
+    /// 文字キー。keycodeは判定に影響しない(0...50の範囲なら変換開始扱いになる)
+    @discardableResult
+    private func type(_ text: String, mods: RemapEngine.Modifiers = []) -> RemapAction {
+        var last: RemapAction = .passThrough
+        for ch in text {
+            let keycode: Int64 = ch == " " ? space : 0
+            last = engine.keyDown(keycode: keycode, mods: mods, isPhysical: true, characters: ch == " " ? " " : String(ch))
+        }
+        return last
+    }
+
+    private func press(_ keycode: Int64, _ mods: RemapEngine.Modifiers = []) -> RemapAction {
+        engine.keyDown(keycode: keycode, mods: mods, isPhysical: true, characters: "")
+    }
+
+    // MARK: 基本
+
+    func testMentionEnterPassesThrough() {
+        type("hello @tan")
+        XCTAssertTrue(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .passThrough)
+        // 確定後は通常どおり改行化に戻る
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testMentionAtMessageStart() {
+        type("@tan")
+        XCTAssertEqual(press(returnKey), .passThrough)
+    }
+
+    func testKeypadEnterAlsoPassesThrough() {
+        type("@tan")
+        XCTAssertEqual(press(keypadEnter), .passThrough)
+    }
+
+    func testMentionEnterDoesNotRegisterKeyUpRemap() {
+        type("@tan")
+        XCTAssertEqual(press(returnKey), .passThrough)
+        XCTAssertEqual(engine.keyUp(keycode: returnKey, mods: []), .passThrough)
+    }
+
+    func testChannelTriggerPassesThrough() {
+        type("see #gen")
+        XCTAssertEqual(press(returnKey), .passThrough)
+    }
+
+    func testEmojiTriggerNeedsTwoCharacters() {
+        type(":s")
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+
+        type(":sm")
+        XCTAssertTrue(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .passThrough)
+    }
+
+    func testSlashCommandOnlyAtLineStart() {
+        type("/rem")
+        XCTAssertEqual(press(returnKey), .passThrough)
+
+        type("foo /rem")
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testSlashAfterNewlineCountsAsLineStart() {
+        type("foo")
+        XCTAssertEqual(press(returnKey), .addShift)
+        type("/rem")
+        XCTAssertEqual(press(returnKey), .passThrough)
+    }
+
+    // MARK: 誤送信を防ぐ(候補が開かない場面では改行のまま)
+
+    func testAtInsideWordIsNotATrigger() {
+        // メールアドレス等の語中 @ では候補は開かない
+        type("mail foo@bar")
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testColonInsideWordIsNotATrigger() {
+        type("at 10:30")
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testBareColonThenEnterIsNewline() {
+        type("note:")
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testModifiedEnterIsUnaffected() {
+        type("@tan")
+        XCTAssertEqual(press(returnKey, [.command]), .stripCommand)
+        XCTAssertFalse(engine.isSuggesting)
+
+        type("@tan")
+        XCTAssertEqual(press(returnKey, [.shift]), .passThrough)
+        XCTAssertFalse(engine.isSuggesting)
+    }
+
+    // MARK: 候補が閉じる操作
+
+    func testSpaceEndsSuggestion() {
+        type("@tan ")
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testEscapeEndsSuggestion() {
+        type("@tan")
+        _ = press(escape)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testTabEndsSuggestion() {
+        type("@tan")
+        _ = press(tab)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testMouseClickEndsSuggestion() {
+        type("@tan")
+        engine.mouseDown()
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testAppSwitchEndsSuggestion() {
+        type("@tan")
+        engine.frontmostChanged(isTarget: true)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testCursorMoveEndsSuggestion() {
+        type("@tan")
+        _ = press(leftArrow)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testCmdShortcutEndsSuggestion() {
+        type("@tan")
+        type("v", mods: [.command])
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testUpDownKeepsSuggestion() {
+        // 候補リスト内の移動
+        type("@tan")
+        _ = press(downArrow)
+        _ = press(upArrow)
+        XCTAssertEqual(press(returnKey), .passThrough)
+    }
+
+    func testBackspaceWithinNameKeepsSuggestion() {
+        type("@tan")
+        _ = press(backspace)
+        XCTAssertTrue(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .passThrough)
+    }
+
+    func testBackspaceDeletingTriggerEndsSuggestion() {
+        type("@t")
+        _ = press(backspace)
+        _ = press(backspace) // @ 自体を消した
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testBackspaceBreaksWordBoundary() {
+        // 削除後は直前の文字が分からないので、単語頭扱いしない(安全側)
+        type("foo ")
+        _ = press(backspace)
+        type("@tan")
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    // MARK: 日本語IMEとの組み合わせ
+
+    func testMentionSurvivesSwitchToJapaneseAndComposition() {
+        // 英数で @ → かなキー → 名前を変換 → 確定Enter → 候補確定Enter
+        type("@")
+        engine.inputSourceChanged(isJapanese: true)
+        _ = press(0)                        // 「た」入力 → 変換中
+        _ = press(space)                    // 変換
+        XCTAssertTrue(engine.isComposing)
+        XCTAssertEqual(press(returnKey), .passThrough) // 確定
+        XCTAssertFalse(engine.isComposing)
+        XCTAssertTrue(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .passThrough) // 候補確定
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testAtTypedInJapaneseModeIsNotATrigger() {
+        // 日本語モードの @ はIMEが全角にすることがあり候補が開くか不明 → 対象外
+        engine.isJapaneseMode = true
+        _ = engine.keyDown(keycode: 19, mods: [.shift], isPhysical: true, characters: "@")
+        XCTAssertEqual(press(returnKey), .passThrough) // 変換確定
+        XCTAssertFalse(engine.isSuggesting)
+        XCTAssertEqual(press(returnKey), .addShift)
+    }
+
+    func testSuggestionIgnoredWhenNotTargetApp() {
+        engine.isTargetAppActive = false
+        type("@tan")
+        XCTAssertFalse(engine.isSuggesting)
+    }
+}
