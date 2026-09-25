@@ -369,10 +369,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let detection = self.sendKeyDetector.detect(bundleID: bundleID)
             DispatchQueue.main.async {
                 self.sendKeyProbeInFlight.remove(bundleID)
-                if detection == .unknown { self.sendKeyProbeGaveUp.insert(bundleID) }
                 self.log.notice("sendkey autodetect \(bundleID, privacy: .public): \(String(describing: detection), privacy: .public)")
 
                 let previous = self.sendKeyDetections[bundleID] ?? .unknown
+                // 一度読めた結果を一時的な読み取り失敗(アプリが設定ファイルを書き換え中など)で
+                // unknown に落とさない。落とすと手動宣言へフォールバックし、⌘Enter送信設定の
+                // LINEで⌘Enterが改行に化ける。読めた実績がある=許可ダイアログは済んでいるので、
+                // 諦めずに次回また読む
+                if detection == .unknown {
+                    if previous == .unknown { self.sendKeyProbeGaveUp.insert(bundleID) }
+                    return
+                }
                 guard detection != previous else { return }
                 self.sendKeyDetections[bundleID] = detection
                 self.settingsModel?.detectedSendKeys[bundleID] = detection
