@@ -230,9 +230,6 @@ export default function HeroDemo() {
           {demo.action === "send" && <span style={{ color: SEND }}>✈ 送信</span>}
         </div>
       </div>
-      <p className="mt-3 text-center text-sm text-muted-foreground">
-        ⌘ は Command キーです。
-      </p>
     </div>
   )
 }

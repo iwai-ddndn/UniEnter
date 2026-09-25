@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { CornerDownLeft } from "lucide-react"
 import { useEffect, useState } from "react"
 import { observeSections, track } from "@/lib/analytics"
-import { ServiceTile, services } from "./brands"
+import { ServiceLogo, ServiceTile, services } from "./brands"
 import HeroDemo from "./HeroDemo"
 
 /*
@@ -182,13 +182,13 @@ export default function App() {
       {/* Hero — CTAはデモより前に置き、ファーストビューの中に入れる */}
       <header data-track-section="hero" className="px-6 pt-10 pb-16 text-center sm:pt-14">
         <Badge variant="secondary" className="mb-5 font-normal text-muted-foreground">
-          メニューバーに常駐・14日間無料・買い切り
+          14日間無料・買い切り
         </Badge>
         <h1 className="text-2xl leading-snug font-bold sm:text-5xl sm:leading-snug">
-          Enterで送信するのは、
-          {/* 狭い画面では「もう終わり。」を独立した行に落とす */}
+          Enterでの
+          {/* 狭い画面では「うっかり送信を防ぎます」を独立した行に落とす */}
           <br className="sm:hidden" />
-          もう終わり。
+          うっかり送信を防ぎます
         </h1>
         {/* サブコピー: 仕組みを1行で。H1は宣言、ここで中身を言う */}
         <p className="mx-auto mt-4 max-w-lg text-base font-medium sm:text-xl">
@@ -206,25 +206,18 @@ export default function App() {
         <p className="mt-3 text-xs text-muted-foreground">
           macOS 13以降 / Mac用インストーラ(.pkg・約3MB)
         </p>
-        <div className="mx-auto mt-5 max-w-md rounded-lg border px-4 py-3 text-left text-sm">
-          初回だけ、Macが確認を求めます(Appleの公証を申請中のため)。開き方は2分 →{" "}
-          <a className="font-medium underline" href="#install">
-            はじめかた
-          </a>
-        </div>
-
         <div className="mt-10">
           <HeroDemo />
         </div>
-
-        <p className="mx-auto mt-8 max-w-lg text-lg font-medium">書きかけのまま、送信されない。</p>
       </header>
 
       {/* Before / After */}
       <section data-track-section="before-after" className="border-t px-6 py-16">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-10 text-center text-2xl font-bold sm:text-3xl">
-            アプリごとに違うEnterを、1つに戻す。
+          <h2 className="mx-auto mb-10 max-w-2xl text-center text-xl leading-relaxed font-bold sm:text-2xl sm:leading-relaxed">
+            チャットアプリ/AIアプリでEnter送信を防ぎ、
+            <br />
+            全て⌘+Enterで送信に統一します。
           </h2>
 
           <div className="grid gap-5 sm:grid-cols-2">
@@ -234,8 +227,9 @@ export default function App() {
                   これまで
                 </p>
                 <div className="space-y-3 text-sm text-muted-foreground">
-                  <p>Slackは設定で変えられる。LINEは変えられない。Teamsは会社が決めている。</p>
-                  <p>で、どれをどう設定したか、もう覚えていない。</p>
+                  <p>改行のつもりで押したEnterで、書きかけのメッセージが送られてしまう。</p>
+                  <p>AIへの長い指示も、1行目だけで送信されてしまう。</p>
+                  <p>取り消して、謝って、書き直す。</p>
                 </div>
               </CardContent>
             </Card>
@@ -283,130 +277,100 @@ export default function App() {
           <p className="mx-auto mb-10 max-w-md text-center text-muted-foreground">
             いま使っているアプリが下のどれかなら、そのまま揃います。ブラウザで開くWeb版も対象です。
           </p>
-          <figure className="mx-auto mb-10 max-w-[240px]">
-            <img
-              src="./assets/install/settings.webp"
-              alt="UniEnterの設定画面。対応サービスがチェックリストで並んでいる"
-              width={340}
-              height={524}
-              loading="lazy"
-              className="w-full rounded-lg border bg-white shadow-sm"
-            />
-            <figcaption className="mt-2 text-center text-xs text-muted-foreground">
-              実際の設定画面。使うサービスにチェックを入れるだけです。
-            </figcaption>
-          </figure>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* スマホはロゴだけを2行に収める。名前とバッジ付きのタイルはsm以上 */}
+          <div className="flex flex-wrap justify-center gap-2 sm:hidden">
+            {services
+              .filter((service) => !service.hideInLogoRow)
+              .map((service) => (
+                <ServiceLogo key={service.name} service={service} />
+              ))}
+          </div>
+          <div className="hidden grid-cols-4 gap-3 sm:grid">
             {services.map((service) => (
               <ServiceTile key={service.name} service={service} />
             ))}
           </div>
-          <p className="mt-6 text-center text-xs text-muted-foreground">
+          <p className="mt-6 hidden text-center text-xs text-muted-foreground sm:block">
             「ブラウザ」バッジは、Safari / Chrome / Edge / Arc などでそのサービスのWeb版を開いたタブが対象、という意味です。
           </p>
         </div>
       </section>
 
-      {/* 安心 — Macの警告文を読む「前」に読ませる */}
+      {/* 安心 — 「どこにも送らない」の1点に絞る。詳細はFAQとプライバシーポリシーへ */}
       <section id="safety" data-track-section="safety" className="border-t px-6 py-16">
         <div className="mx-auto max-w-3xl">
-          <h2 className="mb-3 text-center text-2xl font-bold sm:text-3xl">
-            キー入力を扱うアプリなので、先に説明します。
+          <h2 className="mb-10 text-center text-2xl font-bold sm:text-3xl">
+            入力した文章は、
+            <br className="sm:hidden" />
+            どこにも送りません。
           </h2>
-          <p className="mx-auto mb-10 max-w-lg text-center text-muted-foreground">
-            何を見ていて、何を見ていないか。確かめる方法も書いておきます。
-          </p>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-3">
             <div className="rounded-xl border px-5 py-5">
-              <h3 className="mb-2 font-semibold">入力した文章は、どこにも送りません</h3>
+              <h3 className="mb-2 font-semibold">通信しない</h3>
               <p className="text-sm text-muted-foreground">
-                インターネット通信を一切行いません。UniEnterが使うのは、
-                <strong className="font-medium text-foreground">
-                  EnterキーとCommand(⌘)キーが押されたかどうか
-                </strong>
-                、
-                <strong className="font-medium text-foreground">どのアプリ・どのサイトが前面か</strong>
-                、そして日本語の変換中かを判断するための「文字キーが押された」という事実だけです。どの文字を打ったかは、記録も保存もしません。
+                インターネット通信を一切行いません。打った文字の記録も保存もしません。
               </p>
             </div>
 
             <div className="rounded-xl border px-5 py-5">
-              <h3 className="mb-2 font-semibold">アクセシビリティの許可が要る理由</h3>
+              <h3 className="mb-2 font-semibold">変換中は触れない</h3>
               <p className="text-sm text-muted-foreground">
-                Enterが押されたことを知って、それを改行に置き換えるには、macOSではこの許可しかありません。入力した文章を記録・保存・送信することはありません。通信もしないので、送る先がそもそもありません。
+                日本語の変換を確定するEnterは、そのまま通します。
               </p>
             </div>
 
             <div className="rounded-xl border px-5 py-5">
-              <h3 className="mb-2 font-semibold">変換中のEnterには、触れません</h3>
+              <h3 className="mb-2 font-semibold">中身は公開</h3>
               <p className="text-sm text-muted-foreground">
-                日本語を変換しているあいだ(まだ確定しておらず、下線が付いた文字が出ている状態)のEnterは、そのまま通します。変換の確定が、誤って送信になることはありません。
-              </p>
-            </div>
-
-            <div className="rounded-xl border px-5 py-5">
-              <h3 className="mb-2 font-semibold">ソースコードは、すべて公開しています</h3>
-              <p className="text-sm text-muted-foreground">
-                中身は{" "}
+                ソースコードはすべて{" "}
                 <a className="font-medium text-primary underline" href={REPO_URL}>
                   GitHub
                 </a>{" "}
-                で全部読めます。通信用のコードが一切無いことも、ソースを検索すれば確かめられます。
-                <a className="underline" href="./privacy.html">
-                  プライバシーポリシー
-                </a>
-                もあわせてどうぞ。
+                で読めます。
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* はじめかた — 全員が必ず通る本流。折りたたむのは例外だけ */}
+      {/* はじめかた — ページを短く保つため手順ごとに畳む。手順名だけは常に見せる */}
       <section id="install" data-track-section="install" className="border-t bg-muted/50 px-6 py-16">
         <div className="mx-auto max-w-3xl">
-          <h2 className="mb-3 text-center text-2xl font-bold sm:text-3xl">はじめかた(2分)</h2>
-          <ol className="mx-auto mb-10 flex max-w-xl flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm">
-            {["ダウンロード", "Macに許可する", "使うアプリにチェック"].map((label, i) => (
-              <li key={label} className="flex items-center gap-2">
-                <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  {i + 1}
-                </span>
-                <span className="font-medium">{label}</span>
-                {i < 2 && <span className="ml-1 text-muted-foreground">→</span>}
-              </li>
-            ))}
-          </ol>
+          <h2 className="mb-8 text-center text-2xl font-bold sm:text-3xl">はじめかた(2分)</h2>
 
-          <div className="space-y-5">
+          <Accordion type="multiple" className="rounded-xl border bg-card px-5 shadow-sm">
             {/* ① */}
-            <Card className="shadow-sm">
-              <CardContent className="py-2">
-                <h3 className="mb-2 flex items-center gap-2 font-semibold">
+            <AccordionItem value="step1">
+              <AccordionTrigger className="text-base">
+                <span className="flex items-center gap-2 font-semibold">
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                     1
                   </span>
                   ダウンロード
-                </h3>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
                 <p className="text-sm text-muted-foreground">
                   UniEnter.pkg をダウンロードして、ダブルクリックします。
                 </p>
                 <div className="mt-4">
                   <DownloadButton location="install" label="14日間、無料で試す" />
                 </div>
-              </CardContent>
-            </Card>
+              </AccordionContent>
+            </AccordionItem>
 
             {/* ② */}
-            <Card className="shadow-sm">
-              <CardContent className="py-2">
-                <h3 className="mb-2 flex items-center gap-2 font-semibold">
+            <AccordionItem value="step2">
+              <AccordionTrigger className="text-base">
+                <span className="flex items-center gap-2 font-semibold">
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                     2
                   </span>
                   Macに許可する(初回だけ)
-                </h3>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
 
                 <div className="mb-4 rounded-lg border bg-muted px-4 py-3 text-sm">
                   <p className="mb-1 font-semibold">なぜMacに止められるの?</p>
@@ -471,18 +435,20 @@ export default function App() {
                     </li>
                   </ul>
                 </details>
-              </CardContent>
-            </Card>
+              </AccordionContent>
+            </AccordionItem>
 
             {/* ③ */}
-            <Card className="shadow-sm">
-              <CardContent className="py-2">
-                <h3 className="mb-2 flex items-center gap-2 font-semibold">
+            <AccordionItem value="step3">
+              <AccordionTrigger className="text-base">
+                <span className="flex items-center gap-2 font-semibold">
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                     3
                   </span>
                   使うアプリにチェック
-                </h3>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
                 <p className="mb-4 text-sm text-muted-foreground">
                   インストールが終わるとUniEnterが起動し、キー入力を扱うための許可(アクセシビリティ)を求めます。許可したら、使っているアプリにチェックを入れて終わりです。
                 </p>
@@ -498,19 +464,16 @@ export default function App() {
                     caption="あとは、使うアプリにチェックを入れるだけです。"
                   />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </section>
 
       {/* Pricing */}
       <section id="pricing" data-track-section="pricing" className="border-t px-6 py-16">
         <div className="mx-auto max-w-xl">
-          <h2 className="mb-3 text-center text-2xl font-bold sm:text-3xl">価格</h2>
-          <p className="mx-auto mb-10 max-w-md text-center text-muted-foreground">
-            買い切りです。サブスクではありません。
-          </p>
+          <h2 className="mb-10 text-center text-2xl font-bold sm:text-3xl">価格</h2>
           <Card className="shadow-sm">
             <CardContent className="py-6 text-center">
               <p className="text-4xl font-bold">
@@ -556,7 +519,11 @@ export default function App() {
 
       {/* 最終CTA */}
       <section data-track-section="final-cta" className="border-t px-6 py-16 text-center">
-        <h2 className="text-2xl font-bold sm:text-3xl">Enterは改行、送信は⌘Enter。</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">
+          Enterでの
+          <br className="sm:hidden" />
+          うっかり送信を防ぎます
+        </h2>
         <p className="mx-auto mt-3 max-w-md text-muted-foreground">
           14日間、全機能をそのまま試せます。合わなければ、削除するだけです。
         </p>
@@ -569,27 +536,6 @@ export default function App() {
         <p className="mt-3 text-xs text-muted-foreground">
           macOS 13以降 / Mac用インストーラ(.pkg・約3MB)
         </p>
-      </section>
-
-      {/* 作っている人 */}
-      <section data-track-section="maker" className="border-t bg-muted/50 px-6 py-12">
-        <div className="mx-auto max-w-xl text-sm text-muted-foreground">
-          <h2 className="mb-3 font-semibold text-foreground">作っている人</h2>
-          <p className="mb-2">
-            octo(オクト)という屋号での個人開発です。会社のソフトではありません。
-          </p>
-          <p className="mb-2">
-            不具合の報告・要望・購入の相談は、直接わたしに届きます。{" "}
-            <a className="underline" href="mailto:info@oc-to.com">
-              info@oc-to.com
-            </a>{" "}
-            へ。屋号のサイトは{" "}
-            <a className="underline" href="https://oc-to.com" target="_blank" rel="noopener noreferrer">
-              oc-to.com
-            </a>{" "}
-            です。
-          </p>
-        </div>
       </section>
 
       <footer className="border-t px-6 py-10 text-center text-xs text-muted-foreground">

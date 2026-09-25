@@ -94,8 +94,8 @@ cd site && npm run build
 
 - トーン: ライト・Notion風(白背景、墨色#37352f)。ゲーミング感・ネオンは禁止
 - **キーカラーはティール #0f7b6c の1色のみ**(アプリアイコンと同色。`index.css` の `--primary` / `--ring`)。使うのはCTA・リンク・「改行」ラベル・フォーカス・はじめかたの番号チップだけで、**画面占有5%以下**。見出しや大きな面には使わない。薄いティントが要るときは 地#e8f3f0 / 文字#0b5f54。**青 #2383e2 は全廃**(「送信」は墨色。改行と送信の弁別は⌘キーの有無が担う)
-- メインメッセージ: 「Enterは改行、送信は⌘Enter。/ Macのチャット、ぜんぶで。」。LP・README・marketing・`og.html` で揃える
-- セクション順: ヒーロー → Before/After → 対応サービス → 安心 → はじめかた(2分) → 価格 → FAQ(安心/使い方/購入の3群) → 最終CTA → 作っている人 → フッター
+- メインメッセージ: 「Enterでのうっかり送信を防ぎます」。説明文は「チャットアプリ/AIアプリでEnter送信を防ぎ、全て⌘+Enterで送信に統一します。」。LPのH1・`<title>`・meta description・OGP/Twitter・`og.html`(→ `public/assets/og.png` を再撮影)・README で揃える
+- セクション順: ヒーロー → Before/After → 対応サービス → 安心 → はじめかた(2分) → 価格 → FAQ(安心/使い方/購入の3群) → 最終CTA → フッター(「作っている人」セクションは廃止。はじめかたは手順ごとのアコーディオン、対応サービスはスマホではロゴのみ2行)
 - ヒーローは `HeroDemo.tsx`(3アプリ同期タイピングデモ+キー押下)。**主CTAはデモより上**に置いてファーストビューに入れる。比較検討用の `hero-lab.html` は本番未リンクの内部ページ
 - 画像は実物のスクリーンショットのみ(`screenshots/app/` からWebP化)。生成AI画像・ストック写真は置かない。すべて `loading="lazy"` + `rounded-lg border`
 - はじめかたのmacOSダイアログ3枚は `site/public/assets/install/`(`gatekeeper.png` / `settings-security.png` / `auth.png`)。無いあいだは点線の枠にフォールバックする
