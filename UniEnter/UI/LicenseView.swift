@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// 購入ページのURL(LPの価格欄)。購入はLP経由でPolarのチェックアウトに進む。
-let purchaseURL = URL(string: "https://unienter.oc-to.com/#pricing")!
-/// 購入の受付を始めたら true にする。false の間は「購入」ボタンを出さず、準備中であることを伝える
-/// (押した先のLPが「購入は準備中」だと行き止まりになるため)
-let purchaseOpen = false
+/// 購入ページ(Polarのチェックアウトリンク。LPの「購入する」と同じ)。
+/// 購入後はライセンスキーの表示ページ(license-signing/worker)に移動する
+let purchaseURL = URL(string: "https://buy.polar.sh/polar_cl_zdFJOA7iIWaUzPThWsIjQKyRW0pImM8vfTuhn1sIQLk")!
+/// 購入の受付中か。false の間は「購入」ボタンを出さず、準備中であることを伝える
+/// (2026-09-29 に受付開始)
+let purchaseOpen = true
 
 final class LicenseViewModel: ObservableObject {
     @Published var state: LicenseState
@@ -84,6 +85,10 @@ struct LicenseView: View {
                         NSWorkspace.shared.open(purchaseURL)
                     }
                     .keyboardShortcut(.defaultAction)
+                    Text("ブラウザで購入ページが開きます。購入後すぐ画面にライセンスキーが表示されるので、下の欄に貼り付けてください。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Button("購入について(Webサイト)") {
                         NSWorkspace.shared.open(purchaseURL)
@@ -96,7 +101,7 @@ struct LicenseView: View {
 
                 Divider()
 
-                Text("購入済みの方: メールで届いたライセンスキーを貼り付けてください")
+                Text("購入済みの方: 購入後に表示されたライセンスキーを貼り付けてください")
                     .font(.caption)
                 HStack {
                     TextField("UNIENTER-…", text: $model.keyInput)

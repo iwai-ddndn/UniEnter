@@ -117,7 +117,7 @@ cd site && npm run build
    LPに手順セクションを用意して緩和したが、これは対症療法。**公証前に広く告知しないこと**。
    詳細はObsidian Vaultの `30_Notes/UniEnter/UniEnter-先行テストFB分析（Claude版）.md`(同Fable版もあり)
 2. **課金は2026-09-29に稼働開始**: Polar(組織 `oc-to`)のCheckout Link → Worker `https://unienter-license.oc-to.workers.dev`(`license-signing/worker/`)がキーを発行・表示。LPの価格欄に「購入する」、特商法表記 `tokushoho.html` 公開済み。
-   アプリ側の購入ボタンは次のリリースで `LicenseView.swift` の `purchaseOpen = true` にする(公証と同時のv0.3.4予定)。残り(任意): `POLAR_ACCESS_TOKEN`、購入者へのキーのメール送信(Resend)
+   アプリ側も `LicenseView.swift` の `purchaseOpen = true`(購入ボタン→Polarのチェックアウト)に切替済み。ユーザーに届くのは次のリリース(公証と同時のv0.3.4予定)。残り(任意): `POLAR_ACCESS_TOKEN`、購入者へのキーのメール送信(Resend)
 3. リリース手順: `project.yml` の `CFBundleShortVersionString` を上げる → `scripts/release.sh X.Y.Z` → `gh release create vX.Y.Z dist/UniEnter.pkg dist/UniEnter.zip`(publish.shは既存リリースへの添付用)
 4. アプリアイコンはフラット版(ティール地に白の↵、`design/app-icon/` がソース。再生成手順は同READMEを参照)に差し替え済み
 5. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
