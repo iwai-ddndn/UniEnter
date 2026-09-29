@@ -63,7 +63,7 @@ cd site && npm run build
 - **アプリ側送信キーの宣言と自動検出**: Slack等は設定で送信キーを⌘Enterに反転でき、その場合⌘Enterの意味が逆転して書き換えが破綻する。LINEとSlackは設定ファイルから自動検出する(`SendKeyDetector`: LINEは `LINE.ini` の `chat_sendkey=1`、SlackはIndexedDB blobをSnappy伸長して `msg_input_send_btn`=true。どちらも非公開実装依存のベストエフォートで、読めない場合はunknownに倒す)。それ以外のアプリと検出失敗時は、設定の「詳細オプション」でユーザーに宣言してもらう(素通し判定は宣言∪検出)。**macOS 15+は他アプリのコンテナ初アクセスで許可ダイアログが出て、ユーザーが答えるまで `open()` がブロックしたままになる**(実機で確認済み)。そのため読み取りは専用の並列キューのみで行い、起動時ではなく**対象アプリを開いた直後**に走らせる(ダイアログに文脈を与える)。unknownに終わったら自動再試行しない(ダイアログの繰り返しを避ける)。やり直しは設定の「LINE・Slackの設定を読み直す」から
 - **設定モデル**: `enabledDesktopIDs` / `enabledWebIDs`(サービス×面で独立、旧`enabledBundleIDs`+`browserSupportEnabled`から自動移行)。対象サービスはAppRegistryに集約(hasDesktop/hasWeb、aliases)
 - **課金**: 買い切り+14日無料トライアル。トライアル開始日時はUserDefaults+Application Supportマーカーの二重記録(早い方採用、再インストール耐性)。ライセンスはEd25519署名キーのオフライン検証(公開鍵はLicenseManagerに埋め込み)。発行: `swift license-signing/issue.swift 購入者メール`。期限切れ時は書き換えのみ停止
-- **決済はPaddle予定**: 手順は `notes/PADDLE-SETUP.md`。チェックアウトURL確定後、LP価格セクションのボタンと `UniEnter/UI/LicenseView.swift` の `purchaseURL` を差し替える
+- **決済はPolar.sh予定**(Paddleはドメイン審査が進まず断念): 手順は `notes/POLAR-SETUP.md`、ユーザー作業の全体は `notes/PAYMENT-CHECKLIST.md`。チェックアウトURL確定後、LP価格セクションのボタンと `UniEnter/UI/LicenseView.swift` の `purchaseURL` を差し替える
 
 ## 画面スクリーンショット(修正指示・レビュー用)
 
@@ -92,11 +92,14 @@ cd site && npm run build
 
 ## LP(site/)の約束事
 
-- トーン: ライト・Notion風(白背景、墨色#37352f)。ゲーミング感・ネオンは禁止
+- トーン: 紙の生成り地(#f7f6f2)× 墨(#1d1c19)× ティール1色。「安心」セクションだけ夜色(#161613)。ゲーミング感・ネオン・発光グラデは禁止。LP固有の色・アニメーションは `site/src/landing.css`(`.lpn` 配下)にまとめてある
+- モーション: 見出しの1文字ずつの立ち上がり、スクロール連動(Before/Afterは sticky で5場面、はじめかたのレールが伸びる)、マーキー。`prefers-reduced-motion` では全停止する。**IntersectionObserver頼みの表示なのでBrowser pane非表示中は検証できない**
 - **キーカラーはティール #0f7b6c の1色のみ**(アプリアイコンと同色。`index.css` の `--primary` / `--ring`)。使うのはCTA・リンク・「改行」ラベル・フォーカス・はじめかたの番号チップだけで、**画面占有5%以下**。見出しや大きな面には使わない。薄いティントが要るときは 地#e8f3f0 / 文字#0b5f54。**青 #2383e2 は全廃**(「送信」は墨色。改行と送信の弁別は⌘キーの有無が担う)
 - メインメッセージ: 「Enterでのうっかり送信を防ぎます」。説明文は「チャットアプリ/AIアプリでEnter送信を防ぎ、全て⌘+Enterで送信に統一します。」。LPのH1・`<title>`・meta description・OGP/Twitter・`og.html`(→ `public/assets/og.png` を再撮影)・README で揃える
-- セクション順: ヒーロー → Before/After → 対応サービス → 安心 → はじめかた(2分) → 価格 → FAQ(安心/使い方/購入の3群) → 最終CTA → フッター(「作っている人」セクションは廃止。はじめかたは手順ごとのアコーディオン、対応サービスはスマホではロゴのみ2行)
-- ヒーローは `HeroDemo.tsx`(3アプリ同期タイピングデモ+キー押下)。**主CTAはデモより上**に置いてファーストビューに入れる。比較検討用の `hero-lab.html` は本番未リンクの内部ページ
+- セクション順: ヒーロー → Before/After → 対応サービス → 安心 → はじめかた(2分) → 価格 → FAQ(安心/使い方/購入の3群) → 最終CTA → フッター(「作っている人」セクションは廃止。はじめかたは縦タイムラインで全手順を展開、対応サービスは2列のマーキー。FAQの中身は `site/src/faq.tsx`)
+- 2026-09-29に現行デザインへ全面刷新(旧デザインは git 履歴の `site/src/App.tsx` / `HeroDemo.tsx` を参照)
+- ヒーローは `App.tsx` の `ChatPlayground`: チャット → AIエージェントの自動デモを交互に流し(上のタブで切替も可)、入力欄をクリックすると実際に打てる(Enter=改行、⌘Enter=送信、変換中のEnterは無視)。**主CTAはデモより上**に置いてファーストビューに入れる。比較検討用の `hero-lab.html` は本番未リンクの内部ページ
+- Before/Afterは説明文(大きな1文)が主役でデモが従。デモの方が目立つと「何が起きているか分からない」とのFBがあった
 - 画像は実物のスクリーンショットのみ(`screenshots/app/` からWebP化)。生成AI画像・ストック写真は置かない。すべて `loading="lazy"` + `rounded-lg border`
 - はじめかたのmacOSダイアログ3枚は `site/public/assets/install/`(`gatekeeper.png` / `settings-security.png` / `auth.png`)。無いあいだは点線の枠にフォールバックする
 - 対象サービスの表示は `brands.tsx` の `services` に集約(simple-icons+頭文字タイル)

@@ -4,15 +4,31 @@
     {
       "name": "docs-preview",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "python3 -m http.server \"${PORT:-8123}\" -d docs"],
+      "runtimeArgs": [
+        "-c",
+        "python3 -m http.server \"${PORT:-8123}\" -d docs"
+      ],
       "port": 8123,
       "autoPort": true
     },
     {
       "name": "screenshots",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "python3 -m http.server \"${PORT:-8124}\" -d screenshots/app"],
+      "runtimeArgs": [
+        "-c",
+        "python3 -m http.server \"${PORT:-8124}\" -d screenshots/app"
+      ],
       "port": 8124,
+      "autoPort": true
+    },
+    {
+      "name": "site-dev",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd site && npx vite --port \"${PORT:-5188}\" --strictPort"
+      ],
+      "port": 5188,
       "autoPort": true
     }
   ]
