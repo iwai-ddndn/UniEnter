@@ -80,15 +80,7 @@ export const faqGroups: { title: string; items: { q: string; a: React.ReactNode 
       },
       {
         q: "支払い方法と領収書は?",
-        a: (
-          <>
-            購入の受付はまだ開始していません。開始しましたら、このページと{" "}
-            <a className="underline" href={RELEASES_URL}>
-              リリース一覧
-            </a>{" "}
-            でご案内します。領収書・インボイスは発行できます。
-          </>
-        ),
+        a: "クレジットカード等で購入できます(価格欄の「購入する」から)。決済は Polar Software, Inc. が販売者として代行し、領収書は購入確認のメールで届きます。ライセンスキーは購入直後の画面に表示されますので、控えておいてください。",
       },
     ],
   },

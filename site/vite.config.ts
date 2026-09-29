@@ -16,6 +16,7 @@ export default defineConfig({
         support: path.resolve(__dirname, "support.html"),
         terms: path.resolve(__dirname, "terms.html"),
         privacy: path.resolve(__dirname, "privacy.html"),
+        tokushoho: path.resolve(__dirname, "tokushoho.html"),
         "hero-lab": path.resolve(__dirname, "hero-lab.html"),
       },
     },

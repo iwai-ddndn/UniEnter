@@ -43,6 +43,7 @@ export default function LegalLayout({
         <p className="mb-2 space-x-4">
           <a className="underline" href="./terms.html">利用規約</a>
           <a className="underline" href="./privacy.html">プライバシーポリシー</a>
+          <a className="underline" href="./tokushoho.html">特定商取引法に基づく表記</a>
         </p>
         <p>
           © 2026{" "}

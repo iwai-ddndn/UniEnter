@@ -43,6 +43,8 @@ import "./landing.css"
  */
 
 const PKG_URL = "https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.pkg"
+/* Polarのチェックアウトリンク(販売者=Polar。購入後は Worker のキー表示ページへ戻る) */
+const CHECKOUT_URL = "https://buy.polar.sh/polar_cl_zdFJOA7iIWaUzPThWsIjQKyRW0pImM8vfTuhn1sIQLk"
 const ZIP_URL = "https://github.com/iwai-ddndn/UniEnter/releases/latest/download/UniEnter.zip"
 
 const vars = (v: Record<string, string | number>) => v as CSSProperties
@@ -1586,11 +1588,22 @@ function Pricing() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-9">
+              <div className="mt-9 flex flex-wrap items-center gap-3">
                 <PrimaryCTA location="pricing" />
+                <a
+                  href={CHECKOUT_URL}
+                  onClick={() => track("purchase_click", { location: "pricing" })}
+                  className="group inline-flex h-13 items-center gap-2 rounded-full border border-[var(--ink)]/15 bg-white px-6 text-[15px] font-bold transition-colors hover:border-[var(--ink)]/40"
+                >
+                  購入する
+                  <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </a>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-[var(--ink-3)]">
-                購入は準備中です。トライアル期間中に購入できるようになります。
+                購入後すぐ、画面にライセンスキーが表示されます。決済はPolar(販売代理)が行います。{" "}
+                <a className="underline" href="./tokushoho.html">
+                  特定商取引法に基づく表記
+                </a>
               </p>
             </div>
           </div>
@@ -1835,6 +1848,9 @@ function Footer() {
         </a>
         <a className="hover:text-[var(--ink)]" href="./privacy.html">
           プライバシーポリシー
+        </a>
+        <a className="hover:text-[var(--ink)]" href="./tokushoho.html">
+          特定商取引法に基づく表記
         </a>
       </p>
       <p>
