@@ -2,10 +2,10 @@ name = "unienter-license"
 main = "worker.js"
 compatibility_date = "2026-07-01"
 
-# デプロイ前に `wrangler kv namespace create LICENSES` で作成したIDを設定する
+# `wrangler kv namespace create LICENSES` で作成したID(2026-09-29作成)
 [[kv_namespaces]]
 binding = "LICENSES"
-id = "TODO_KV_NAMESPACE_ID"
+id = "ccddd38e76424e3abd597ff6fc2e5ee8"
 
 [vars]
 # 本番: https://api.polar.sh / サンドボックス: https://sandbox-api.polar.sh

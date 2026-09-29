@@ -1,3 +1,9 @@
+> **進捗(2026-09-29)**: Apple Developer Program 申請済み(承認待ち)。Polar 組織 `oc-to`(表示名 octo)作成・審査承認・
+> 本人確認・Stripe入金口座 接続済み。Checkout Link 作成済み(`https://buy.polar.sh/polar_cl_zdFJOA7iIWaUzPThWsIjQKyRW0pImM8vfTuhn1sIQLk`、
+> Success URL は Worker の `/license?checkout_id={CHECKOUT_ID}`)。Worker `https://unienter-license.oc-to.workers.dev` を公開し、
+> Webhook(order.paid)と秘密鍵を登録。100%割引コードでの¥0テスト購入で、キー発行→表示→公開鍵での署名検証まで通った。
+> 残り: 特商法表記ページ(氏名待ち)→ LP購入ボタン公開、公証(Apple承認待ち)、POLAR_ACCESS_TOKEN(任意)、Resend(任意)。
+
 # 課金開始チェックリスト(2026-09-29調査)
 
 UniEnter(¥1,480税込・買い切り・14日トライアル・Ed25519オフラインキー)の販売を始めるまでに
@@ -61,7 +67,7 @@ UniEnter(¥1,480税込・買い切り・14日トライアル・Ed25519オフラ�
 ### A-3. 商品作成(10分)— 本番・サンドボックス両方
 - [ ] Products → New Product: `UniEnter` / **One-time purchase**
 - [ ] 価格を **JPY 1,480** で設定。デフォルト通貨の価格は必須(空だと無料扱い)[3]
-  - 【要確認】組織のデフォルト通貨をJPYにできるか。USDのままなら USD 価格も必要(海外客にはUSD表示になる)
+  - 確認済み(2026-09-29): 組織作成時にデフォルト通貨として Japanese Yen を選べる
 - [ ] Settings の税表示で、日本向けが **税込(inclusive)** になっていることを確認 [3]
 - [ ] Benefits(特典)は付けない(キーは自前Workerが発行するため Polar のライセンスキー特典は不要)
 
