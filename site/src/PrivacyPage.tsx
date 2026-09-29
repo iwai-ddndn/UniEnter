@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <LegalLayout
       title="プライバシーポリシー"
-      established="制定日: 2026年7月22日 / 最終改定日: 2026年7月24日"
+      established="制定日: 2026年7月22日 / 最終改定日: 2026年9月29日"
     >
       <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
         octo(https://oc-to.com、以下「提供者」)は、macOS用ソフトウェア「UniEnter」(以下「本アプリ」)
@@ -33,11 +33,11 @@ export default function PrivacyPage() {
 
       <LegalSection title="3. ライセンス購入時に取得する情報">
         <p>
-          決済は Paddle.com Market Ltd.(以下「Paddle」)が販売者(Merchant of Record)として処理します。
-          クレジットカード情報等の決済情報はPaddleが取り扱い、提供者には渡りません。
-          Paddleにおける情報の取り扱いは、
-          <a className="underline" href="https://www.paddle.com/legal/privacy" target="_blank" rel="noopener noreferrer">
-            Paddleのプライバシーポリシー
+          決済は Polar Software, Inc.(以下「Polar」)が販売者(Merchant of Record)として処理します。
+          クレジットカード情報等の決済情報はPolar(およびその決済基盤であるStripe)が取り扱い、提供者には渡りません。
+          Polarにおける情報の取り扱いは、
+          <a className="underline" href="https://polar.sh/legal/privacy" target="_blank" rel="noopener noreferrer">
+            Polarのプライバシーポリシー
           </a>
           をご確認ください。
         </p>

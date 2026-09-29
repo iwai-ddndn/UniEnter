@@ -1111,10 +1111,27 @@ function BeforeAfter() {
       style={{ height: `${STORY.length * 75 + 100}svh` }}
     >
       <div className="sticky top-0 flex h-svh items-center overflow-hidden">
-        {/* 背景: Before→Afterで地が静かに切り替わる */}
+        {/* 背景: 「これまで」は周囲がぼんやり暗く沈んだ曇天、「UniEnterを入れると」で一気に晴れる */}
         <div
-          className="absolute inset-0 transition-colors duration-700"
-          style={{ backgroundColor: cur.before ? "var(--paper-2)" : "#ffffff" }}
+          className="absolute inset-0 transition-colors duration-1000"
+          style={{ backgroundColor: cur.before ? "#e4e1d9" : "#ffffff" }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 transition-opacity duration-1000"
+          style={{
+            opacity: cur.before ? 1 : 0,
+            background:
+              "radial-gradient(ellipse 70% 65% at 50% 50%, transparent 35%, rgba(29,28,25,0.22) 75%, rgba(29,28,25,0.5) 100%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 transition-opacity duration-1000"
+          style={{
+            opacity: cur.before ? 0 : 1,
+            background: "radial-gradient(ellipse 55% 50% at 70% 50%, rgba(232,243,240,0.9), transparent 70%)",
+          }}
         />
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-5 px-5 pt-14 lg:grid-cols-[1.2fr_0.8fr] lg:gap-14 lg:pt-0">
           <div>
@@ -1161,7 +1178,10 @@ function BeforeAfter() {
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[400px] lg:max-w-[440px]">
+          <div
+            className="mx-auto w-full max-w-[400px] transition-[filter,opacity] duration-1000 lg:max-w-[440px]"
+            style={{ filter: cur.before ? "grayscale(0.6) contrast(0.95)" : "none", opacity: cur.before ? 0.92 : 1 }}
+          >
             <Scene key={step} step={step} />
           </div>
         </div>

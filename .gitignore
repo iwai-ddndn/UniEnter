@@ -5,3 +5,7 @@ DerivedData/
 xcuserdata/
 dist/
 license-signing/keys.txt
+
+# SNS動画レンダラの一時依存
+marketing/sns/node_modules
+marketing/sns/video/frames-*

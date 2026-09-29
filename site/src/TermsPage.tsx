@@ -2,7 +2,7 @@ import LegalLayout, { LegalSection } from "./LegalLayout"
 
 export default function TermsPage() {
   return (
-    <LegalLayout title="利用規約" established="制定日: 2026年7月22日">
+    <LegalLayout title="利用規約" established="制定日: 2026年7月22日 / 最終改定日: 2026年9月29日">
       <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
         本規約は、octo(https://oc-to.com、以下「提供者」)が提供するmacOS用ソフトウェア
         「UniEnter」(以下「本アプリ」)の利用条件を定めるものです。
@@ -22,11 +22,11 @@ export default function TermsPage() {
 
       <LegalSection title="第2条(購入・支払い・返金)">
         <p>
-          ライセンスの販売は、決済代行事業者 Paddle.com Market Ltd.(以下「Paddle」)が
+          ライセンスの販売は、決済代行事業者 Polar Software, Inc.(以下「Polar」)が
           販売者(Merchant of Record)として行います。支払い・領収書・返金は、
-          Paddleの規約およびポリシーに従って処理されます。
+          Polarの規約およびポリシーに従って処理されます。
         </p>
-        <p>返金をご希望の場合は、購入時のメールに記載のPaddleの窓口、または提供者(info@oc-to.com)までご連絡ください。</p>
+        <p>返金をご希望の場合は、購入時のメールに記載のPolarの窓口、または提供者(info@oc-to.com)までご連絡ください。</p>
       </LegalSection>
 
       <LegalSection title="第3条(禁止事項)">

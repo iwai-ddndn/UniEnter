@@ -1,0 +1,7 @@
+/* コマ撮りなので実時間で動くものは全部止める。見た目は Promo.tsx が t から決める */
+.promo *,
+.promo *::before,
+.promo *::after {
+  transition: none !important;
+  animation: none !important;
+}

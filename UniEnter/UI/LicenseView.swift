@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 購入ページのURL。Paddleで商品を作成したらチェックアウトリンクに差し替える。
+/// 購入ページのURL(LPの価格欄)。購入はLP経由でPolarのチェックアウトに進む。
 let purchaseURL = URL(string: "https://unienter.oc-to.com/#pricing")!
 
 final class LicenseViewModel: ObservableObject {
