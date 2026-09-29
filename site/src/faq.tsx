@@ -39,7 +39,7 @@ export const faqGroups: { title: string; items: { q: string; a: React.ReactNode 
     items: [
       {
         q: "アプリ側の設定と、どちらが優先される?",
-        a: "UniEnterが優先されます。LINEやSlackが「Enterで送信」の設定でも、チェックを入れたアプリでは Enter=改行 / ⌘Enter=送信 になります。各アプリの設定画面を開いて確認する必要はありません(例外が1つだけあります。この群の最後の項目をご覧ください)。",
+        a: "UniEnterが優先されます。LINEやSlackが「Enterで送信」の設定でも、チェックを入れたアプリでは Enterで改行・⌘Enterで送信 になります。各アプリの設定画面を開いて確認する必要はありません(例外が1つだけあります。この群の最後の項目をご覧ください)。",
       },
       {
         q: "Enterで送信するのに慣れている。元に戻せる?",
@@ -63,7 +63,7 @@ export const faqGroups: { title: string; items: { q: string; a: React.ReactNode 
       },
       {
         q: "⌘Enterを押しても送信できない",
-        a: "そのアプリ自身の設定で、送信キーをすでに「⌘Enter」に変更している場合に起こります。UniEnterの切り替えと二重にかかるためです。UniEnterの設定を開き、一番下の「⌘Enterを押しても送信できないときは」から、そのアプリにチェックを入れてください。UniEnterがそのアプリに手を出さなくなり、元どおり送信できます。",
+        a: "そのアプリ自身の設定で、Enterを「改行」に変えている場合に起こります。UniEnterの切り替えと二重にかかるためです。メニューバーの ⏎ から設定を開き、「⌘Enterを押しても送信できないときは」でそのアプリにチェックを入れてください。UniEnterがそのアプリに手を出さなくなり、元どおり送信できます(LINEとSlackは自動で確かめます)。",
       },
     ],
   },

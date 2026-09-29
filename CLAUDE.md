@@ -20,7 +20,7 @@ macOSのチャットアプリ全般で「Enter=改行、⌘Enter=送信」に統
 - `scripts/publish.sh` — 「公開して」の一発実行(repo public化 + Pages有効化 + リリース添付)
 - `license-signing/` — ライセンス発行。`keys.txt`(秘密鍵)は**git管理外・要バックアップ**
 - `notes/` — 内部向けドキュメント(PADDLE-SETUP.md等。docs/はPagesで公開されるため置かない)
-- `marketing/` — リリース告知プランとX投稿用素材(公開リポジトリなので機密は置かない)
+- `marketing/` — リリース告知プランとSNS素材。**現行の素材は `marketing/sns/`**(動画・プロフィール画像・投稿画像・プロフィール文。描画元は `site/src/promo/`、ビルド対象外)。公開リポジトリなので機密は置かない
 - `screenshots/app/` — アプリ全画面のスクリーンショット(**生成物。手で編集しない**)
 - `design/app-icon/` — アプリアイコンのソース(SVG + CoreGraphicsレンダラ `render.swift`)。OG画像のソースは `site/og.html`(headless Chromeで1200×630に撮影)
 
@@ -63,6 +63,9 @@ cd site && npm run build
 - **アプリ側送信キーの宣言と自動検出**: Slack等は設定で送信キーを⌘Enterに反転でき、その場合⌘Enterの意味が逆転して書き換えが破綻する。LINEとSlackは設定ファイルから自動検出する(`SendKeyDetector`: LINEは `LINE.ini` の `chat_sendkey=1`、SlackはIndexedDB blobをSnappy伸長して `msg_input_send_btn`=true。どちらも非公開実装依存のベストエフォートで、読めない場合はunknownに倒す)。それ以外のアプリと検出失敗時は、設定の「詳細オプション」でユーザーに宣言してもらう(素通し判定は宣言∪検出)。**macOS 15+は他アプリのコンテナ初アクセスで許可ダイアログが出て、ユーザーが答えるまで `open()` がブロックしたままになる**(実機で確認済み)。そのため読み取りは専用の並列キューのみで行い、起動時ではなく**対象アプリを開いた直後**に走らせる(ダイアログに文脈を与える)。unknownに終わったら自動再試行しない(ダイアログの繰り返しを避ける)。やり直しは設定の「LINE・Slackの設定を読み直す」から
 - **設定モデル**: `enabledDesktopIDs` / `enabledWebIDs`(サービス×面で独立、旧`enabledBundleIDs`+`browserSupportEnabled`から自動移行)。対象サービスはAppRegistryに集約(hasDesktop/hasWeb、aliases)
 - **課金**: 買い切り+14日無料トライアル。トライアル開始日時はUserDefaults+Application Supportマーカーの二重記録(早い方採用、再インストール耐性)。ライセンスはEd25519署名キーのオフライン検証(公開鍵はLicenseManagerに埋め込み)。発行: `swift license-signing/issue.swift 購入者メール`。期限切れ時は書き換えのみ停止
+- **購入受付前の表示**: `LicenseView.swift` の `purchaseOpen` が false の間は「購入について(Webサイト)」+準備中の注記を出す(LPも「購入は準備中」なので行き止まりを避ける)。受付開始時に true にする
+- **メニューバー**: ステータス行 / 一時停止 / 設定… / 使い方… / ⌘Enterで送信できないとき… / ライセンス… / 終了。ステータス行は「止まっているのに動いて見える」を避けるため、許可切れ・トライアル終了・タップ停止のときは押して直せる項目になる。ブラウザ判定の診断はOptionキーを押して開いたときだけ出る
+- **アプリの色**: `Assets.xcassets/AccentColor`(ライト #0f7b6c / ダーク #4fb3a3)をグローバルアクセントに設定済み。「→ 改行」は accentColor、「→ 送信」は primary。青・緑・オレンジの文字色は使わない(アイコンのみ可)
 - **決済はPolar.sh予定**(Paddleはドメイン審査が進まず断念): 手順は `notes/POLAR-SETUP.md`、ユーザー作業の全体は `notes/PAYMENT-CHECKLIST.md`。チェックアウトURL確定後、LP価格セクションのボタンと `UniEnter/UI/LicenseView.swift` の `purchaseURL` を差し替える
 
 ## 画面スクリーンショット(修正指示・レビュー用)

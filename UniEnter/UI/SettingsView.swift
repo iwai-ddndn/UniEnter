@@ -8,6 +8,8 @@ final class SettingsViewModel: ObservableObject {
     /// アプリの設定ファイルから読み取った送信キー設定(AppDelegateが更新。保存はしない)。
     /// bundle IDごとのtri-state(.cmdEnterSend/.standard/.unknown・未検出はキー自体が無い)
     @Published var detectedSendKeys: [String: SendKeyDetection] = [:]
+    /// 「⌘Enterを押しても送信できないときは」を開いているか。メニューから直接開けるようモデルに持つ
+    @Published var showAdvanced = false
 
     /// Enterで改行(送信しない)の設定を自動検出できたアプリ。UniEnterは素通しする
     var detectedCmdEnterSendApps: Set<String> {
@@ -92,28 +94,27 @@ final class SettingsViewModel: ObservableObject {
 
 struct SettingsView: View {
     @ObservedObject var model: SettingsViewModel
-    @State private var showAdvanced: Bool
 
     init(model: SettingsViewModel, showAdvanced: Bool = false) {
         self.model = model
-        _showAdvanced = State(initialValue: showAdvanced)
+        if showAdvanced { model.showAdvanced = true }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("対象アプリ")
                 .font(.headline)
-            Text("チェックを入れたところが、Enter=改行 / ⌘Enter=送信 になります。")
+            Text("チェックを入れたところは、Enterで改行・⌘Enterで送信になります。")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 5) {
                 GridRow {
                     Text("")
-                    Text("アプリ")
+                    Text("Macアプリ")
                         .font(.caption2)
                         .foregroundColor(.secondary)
-                    Text("ブラウザ")
+                    Text("ブラウザ版")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -144,7 +145,7 @@ struct SettingsView: View {
             }
             .padding(.leading, 4)
 
-            Text("ブラウザ版はSafari / Chrome / Edge / Arcなどの対象タブで働きます。")
+            Text("ブラウザ版は、Safari・Chrome・Edge・Arcでそのサービスのページを開いているときに働きます。")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -155,14 +156,14 @@ struct SettingsView: View {
             // アプリ自身の設定でEnterが「改行」になっている人は、UniEnterと二重にかかって
             // 送信できなくなる。LINE/Slackは設定ファイルから自動検出できる(SendKeyDetector)が、
             // それ以外は外部から検知する手段がないため、症状から辿れる形にしてある。
-            DisclosureGroup(isExpanded: $showAdvanced) {
+            DisclosureGroup(isExpanded: $model.showAdvanced) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("そのアプリ自身の設定でEnterを「改行」に変えていると、UniEnterと二重にかかって送信できなくなります。⌘Enterで送信できるかどうかは関係ありません(既定のままでも⌘Enterで送れるアプリが多いです)。LINEとSlackは設定を自動で読み取って素通しします(「自動検出」表示)。その他のアプリは「その他のアプリを追加」からチェックを入れると、UniEnterはそのアプリに何もしません。")
+                    Text("アプリ自身の設定でEnterを「改行」にしていると、UniEnterと二重にかかって送信できなくなります。そのアプリにチェックを入れると、UniEnterは手を出さなくなります。LINEとSlackは自動で確かめます。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("アプリ側で、Enterを改行に設定済み:")
+                    Text("Enterを「改行」に設定しているアプリ:")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .padding(.top, 2)
@@ -174,7 +175,7 @@ struct SettingsView: View {
                         Button("LINE・Slackの設定を読み直す", action: recheck)
                             .controlSize(.small)
                             .padding(.top, 2)
-                        Text("読み取りにはmacOSの許可が必要です。ダイアログが出たら「許可」を選んでください(許可しなくても、上のチェックで手動指定できます)。")
+                        Text("LINE・Slackの設定を読むときにmacOSの確認が出ます。「許可しない」を選んだあとのやり直し用です(許可しなくても、上のチェックで指定できます)。")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -195,9 +196,7 @@ struct SettingsView: View {
 
             Divider()
 
-            Text("制作: [octo](https://oc-to.com) — お問い合わせ: [info@oc-to.com](mailto:info@oc-to.com)")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            CreditLine()
         }
         .padding(20)
         .frame(width: 340)

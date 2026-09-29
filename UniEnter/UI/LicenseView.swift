@@ -2,6 +2,9 @@ import SwiftUI
 
 /// 購入ページのURL(LPの価格欄)。購入はLP経由でPolarのチェックアウトに進む。
 let purchaseURL = URL(string: "https://unienter.oc-to.com/#pricing")!
+/// 購入の受付を始めたら true にする。false の間は「購入」ボタンを出さず、準備中であることを伝える
+/// (押した先のLPが「購入は準備中」だと行き止まりになるため)
+let purchaseOpen = false
 
 final class LicenseViewModel: ObservableObject {
     @Published var state: LicenseState
@@ -38,36 +41,58 @@ struct LicenseView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // 色はアイコンにだけ付ける(システムの緑・オレンジの文字は白地で読みにくい)
             switch model.state {
             case .licensed(let email):
-                Label("ライセンス認証済み", systemImage: "checkmark.seal.fill")
-                    .font(.headline)
-                    .foregroundColor(.green)
+                Label {
+                    Text("ライセンス認証済み")
+                } icon: {
+                    Image(systemName: "checkmark.seal.fill").foregroundColor(.accentColor)
+                }
+                .font(.headline)
+                Text("ありがとうございます。このMacでずっと使えます。")
+                    .font(.callout)
                 Text(email)
                     .font(.caption)
                     .foregroundColor(.secondary)
             case .trial(let daysLeft):
-                Label("無料トライアル中 — 残り \(daysLeft) 日", systemImage: "clock")
+                Label("無料トライアル中 — あと \(daysLeft) 日", systemImage: "clock")
                     .font(.headline)
-                Text("トライアルが終わるとEnterキーの切り替えが止まり、各アプリ本来の動きに戻ります。ライセンスを購入すると引き続き利用できます(買い切り)。")
+                Text("トライアルが終わるとEnterキーの切り替えが止まり、各アプリ本来の動きに戻ります。続けて使うにはライセンスを購入してください。")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             case .expired:
-                Label("無料トライアルが終了しました", systemImage: "exclamationmark.circle.fill")
-                    .font(.headline)
-                    .foregroundColor(.orange)
-                Text("現在Enterキーの切り替えは止まっていて、各アプリ本来の動きに戻っています。ライセンスを購入すると再開します(買い切り)。使わない場合は、アプリを削除してかまいません。")
+                Label {
+                    Text("無料トライアルが終了しました")
+                } icon: {
+                    Image(systemName: "exclamationmark.circle.fill").foregroundColor(.orange)
+                }
+                .font(.headline)
+                Text("いまEnterキーの切り替えは止まっていて、各アプリ本来の動きに戻っています。ライセンスを購入すると再開します。使わない場合は、アプリを削除してかまいません。")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             if case .licensed = model.state {} else {
-                Button("ライセンスを購入") {
-                    NSWorkspace.shared.open(purchaseURL)
+                Text("¥1,480(税込・買い切り)")
+                    .font(.subheadline.bold())
+
+                if purchaseOpen {
+                    Button("ライセンスを購入") {
+                        NSWorkspace.shared.open(purchaseURL)
+                    }
+                    .keyboardShortcut(.defaultAction)
+                } else {
+                    Button("購入について(Webサイト)") {
+                        NSWorkspace.shared.open(purchaseURL)
+                    }
+                    Text("購入の受付は準備中です。始まったら、この画面から購入できるようになります。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .keyboardShortcut(.defaultAction)
 
                 Divider()
 
@@ -85,11 +110,25 @@ struct LicenseView: View {
             if let message = model.message {
                 Text(message)
                     .font(.caption)
-                    .foregroundColor(model.messageIsError ? .red : .green)
+                    .foregroundColor(model.messageIsError ? .red : .primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+
+            Divider()
+
+            CreditLine()
         }
         .padding(20)
         .frame(width: 380)
+    }
+}
+
+/// クレジット表記。全画面で同じ形式にそろえる(CLAUDE.md「連絡先・クレジット表記の統一」)
+struct CreditLine: View {
+    var body: some View {
+        Text("制作: [octo(oc-to.com)](https://oc-to.com) / お問い合わせ: [info@oc-to.com](mailto:info@oc-to.com)")
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .tint(.accentColor)
     }
 }

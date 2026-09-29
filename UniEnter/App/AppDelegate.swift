@@ -7,7 +7,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem!
     private var statusMenuLine: NSMenuItem!
-    private var enabledMenuItem: NSMenuItem!
+    private var pauseMenuItem: NSMenuItem!
+    /// サポート用の診断項目。Optionキーを押しながらメニューを開いたときだけ出す
+    private var diagMenuItem: NSMenuItem!
     private let tapManager = EventTapManager()
     private let engine = RemapEngine()
     private let inputSourceMonitor = InputSourceMonitor()
@@ -192,15 +194,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             log.info("waiting for accessibility permission")
             updateStatusUI()
             showOnboarding()
-            permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
-                guard let self, AXIsProcessTrusted() else { return }
-                timer.invalidate()
-                self.permissionTimer = nil
-                self.onboardingWindow?.close()
-                self.onboardingWindow = nil
-                self.startTap()
-            }
+            waitForPermission()
         }
+    }
+
+    /// 許可されるまで1秒ごとに確認し、許可されたら案内を閉じてタップを始める
+    private func waitForPermission() {
+        guard permissionTimer == nil else { return }
+        permissionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self, AXIsProcessTrusted() else { return }
+            timer.invalidate()
+            self.permissionTimer = nil
+            self.onboardingWindow?.close()
+            self.onboardingWindow = nil
+            self.startTap()
+        }
+    }
+
+    /// 起動後に許可が外れたとき(アップデート・再インストール等)にメニューから呼ぶ
+    @objc private func requestPermissionAgain() {
+        showOnboarding()
+        waitForPermission()
+    }
+
+    /// タップが止まっているときにメニューから再開する
+    @objc private func restartTap() {
+        startTap()
     }
 
     /// SwiftUIの内容にウィンドウサイズが追従するウィンドウを作る。
@@ -254,6 +273,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func maybeShowTutorial() {
         guard tapManager.isRunning, !settingsStore.hasSeenTutorial else { return }
         settingsStore.hasSeenTutorial = true
+        showTutorial()
+    }
+
+    @objc private func showTutorial() {
+        if let tutorialWindow {
+            tutorialWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
         let view = TutorialView(
             model: ensureSettingsModel(),
             finish: { [weak self] in
@@ -307,7 +335,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         engine.isJapaneseMode = inputSourceMonitor.isJapaneseMode
     }
 
-    /// メニューに表示する現在の判定状態(切り分け用の診断表示)
+    /// メニューのステータス行に出す、いまの判定(前面が対象外なら nil)
     private var currentTargetLabel: String?
 
     /// ネイティブアプリ判定とブラウザWeb版判定を合成してエンジンへ反映する
@@ -328,16 +356,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if let id = nativeID {
             let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
-            if detectedCmdEnterSendApps.contains(id) {
-                currentTargetLabel = "\(name)(Enter=改行の設定を自動検出・素通し)"
-            } else if passthroughApps.contains(id) {
-                currentTargetLabel = "\(name)(Enter=改行の設定・素通し)"
+            if passthroughApps.contains(id) {
+                currentTargetLabel = "\(name) — アプリ側の設定(Enterで改行)のまま"
             } else {
-                currentTargetLabel = name
+                currentTargetLabel = "動作中 — \(name)"
             }
         } else if let id = webID {
             let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
-            currentTargetLabel = "\(name) (Web)"
+            currentTargetLabel = "動作中 — \(name)(ブラウザ版)"
         } else {
             currentTargetLabel = nil
         }
@@ -400,23 +426,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.button?.image = NSImage(systemSymbolName: "return", accessibilityDescription: "UniEnter")
 
         let menu = NSMenu()
+        // ステータス行は状態によって押せる/押せないを切り替えるので自動有効化を切る
+        menu.autoenablesItems = false
+        menu.delegate = self
         statusMenuLine = NSMenuItem(title: "起動中…", action: nil, keyEquivalent: "")
+        statusMenuLine.target = self
         statusMenuLine.isEnabled = false
         menu.addItem(statusMenuLine)
         menu.addItem(.separator())
-        enabledMenuItem = NSMenuItem(title: "有効", action: #selector(toggleEnabled), keyEquivalent: "")
-        enabledMenuItem.target = self
-        enabledMenuItem.state = .on
-        menu.addItem(enabledMenuItem)
+        pauseMenuItem = NSMenuItem(title: "一時停止", action: #selector(toggleEnabled), keyEquivalent: "")
+        pauseMenuItem.target = self
+        pauseMenuItem.state = .off
+        menu.addItem(pauseMenuItem)
         let settingsItem = NSMenuItem(title: "設定…", action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
+        let tutorialItem = NSMenuItem(title: "使い方…", action: #selector(showTutorial), keyEquivalent: "")
+        tutorialItem.target = self
+        menu.addItem(tutorialItem)
+        let sendKeyHelpItem = NSMenuItem(title: "⌘Enterで送信できないとき…", action: #selector(openSendKeyHelp), keyEquivalent: "")
+        sendKeyHelpItem.target = self
+        menu.addItem(sendKeyHelpItem)
         let licenseItem = NSMenuItem(title: "ライセンス…", action: #selector(openLicense), keyEquivalent: "")
         licenseItem.target = self
         menu.addItem(licenseItem)
-        let diagItem = NSMenuItem(title: "ブラウザ判定を診断(ログ出力)", action: #selector(dumpBrowserDiagnostics), keyEquivalent: "")
-        diagItem.target = self
-        menu.addItem(diagItem)
+        diagMenuItem = NSMenuItem(title: "ブラウザ判定を診断(ログ出力)", action: #selector(dumpBrowserDiagnostics), keyEquivalent: "")
+        diagMenuItem.target = self
+        diagMenuItem.isHidden = true
+        menu.addItem(diagMenuItem)
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "UniEnterを終了", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         statusItem.menu = menu
@@ -477,6 +514,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    /// 「⌘Enterで送信できないとき…」: 設定画面を、該当の項目を開いた状態で出す
+    @objc private func openSendKeyHelp() {
+        ensureSettingsModel().showAdvanced = true
+        openSettings()
+    }
+
     @objc private func openLicense() {
         if licenseWindow == nil {
             let model = LicenseViewModel(manager: licenseManager)
@@ -495,35 +538,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func toggleEnabled() {
         engine.isEnabled.toggle()
-        enabledMenuItem.state = engine.isEnabled ? .on : .off
+        pauseMenuItem.state = engine.isEnabled ? .off : .on
         updateStatusUI()
     }
 
+    /// ステータス行とメニューバーアイコンを今の状態に合わせる。
+    /// 「止まっているのに動いているように見える」ことが一番の事故の元なので、
+    /// 止まっている状態は必ず言葉とアイコンで示し、直せるものは行を押して直せるようにする
     private func updateStatusUI() {
         guard statusMenuLine != nil else { return }
-        if !AXIsProcessTrusted() {
-            statusMenuLine.title = "アクセシビリティ権限が必要です"
-            statusItem.button?.image = NSImage(systemSymbolName: "exclamationmark.triangle",
-                                              accessibilityDescription: "権限が必要")
-        } else if !isEntitled {
-            statusMenuLine.title = "トライアル終了 — 停止中(ライセンス…から購入)"
-            statusItem.button?.image = NSImage(systemSymbolName: "exclamationmark.triangle",
-                                              accessibilityDescription: "トライアル終了")
-        } else if tapManager.isRunning {
-            var title: String
-            if let label = currentTargetLabel {
-                title = "動作中 — 対象: \(label)"
-            } else {
-                title = "動作中 — 前面は対象外"
-            }
-            if case .trial(let daysLeft) = licenseManager.state {
-                title += "(試用あと\(daysLeft)日)"
-            }
+        func set(_ title: String, symbol: String, action: Selector? = nil) {
             statusMenuLine.title = title
-            statusItem.button?.image = NSImage(systemSymbolName: "return",
-                                              accessibilityDescription: "UniEnter")
-        } else {
-            statusMenuLine.title = "停止中"
+            statusMenuLine.action = action
+            statusMenuLine.isEnabled = action != nil
+            statusItem.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: title)
         }
+        if !AXIsProcessTrusted() {
+            set("アクセシビリティの許可が必要です — 許可する…", symbol: "exclamationmark.triangle",
+                action: #selector(requestPermissionAgain))
+        } else if !isEntitled {
+            set("トライアル終了 — Enterは各アプリ本来の動きです", symbol: "exclamationmark.triangle",
+                action: #selector(openLicense))
+        } else if !engine.isEnabled {
+            set("一時停止中 — Enterは各アプリ本来の動きです", symbol: "pause.circle")
+        } else if tapManager.isRunning {
+            var title = currentTargetLabel ?? "待機中 — いまのアプリは対象外"
+            if case .trial(let daysLeft) = licenseManager.state {
+                title += "(無料トライアル あと\(daysLeft)日)"
+            }
+            set(title, symbol: "return")
+        } else {
+            set("停止中 — クリックで再開", symbol: "exclamationmark.triangle", action: #selector(restartTap))
+        }
+    }
+}
+
+extension AppDelegate: NSMenuDelegate {
+    func menuWillOpen(_ menu: NSMenu) {
+        // 許可が外れた等の変化を、メニューを開いた時点で必ず反映する
+        updateStatusUI()
+        diagMenuItem.isHidden = !NSEvent.modifierFlags.contains(.option)
     }
 }

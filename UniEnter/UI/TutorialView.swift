@@ -74,16 +74,16 @@ struct TutorialView: View {
                 key("Enter")
                 Text("→ 改行")
                     .font(.headline)
-                    .foregroundColor(.green)
+                    .foregroundColor(.accentColor)
             }
             HStack(spacing: 10) {
                 key("⌘")
                 key("Enter")
                 Text("→ 送信")
                     .font(.headline)
-                    .foregroundColor(.blue)
+                    .foregroundColor(.primary)
             }
-            Text("SlackやLINE、ChatGPTなどの対象アプリすべてで、\nこの操作に統一されます。うっかり送信は、もう起きません。")
+            Text("SlackやLINE、ChatGPTなどの対象アプリすべてで、\nこの操作に統一されます。Enterでのうっかり送信を防ぎます。")
                 .font(.callout)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -94,11 +94,11 @@ struct TutorialView: View {
     // UniEnterと二重にかかって送信できなくなるため、使い始める前に確認してもらう
     private var stepSendKey: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Enterで改行(送信しない)に設定している\nアプリを選んでください")
+            Text("アプリの設定で、Enterを「改行」に\nしているものはありますか?")
                 .font(.title3.bold())
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
-            Text("アプリ自身の設定で、Enterキーを「改行」に変えている場合だけチェックしてください。⌘Enterで送信できるかどうかは関係ありません(既定のままでも⌘Enterで送れるアプリが多いです)。チェックしたアプリにはUniEnterは何もしません。LINEとSlackは設定を自動で読み取ります。")
+            Text("ほとんどの方は該当しません。そのまま「さっそく使う」で大丈夫です。\nアプリ自身の設定でEnterを改行に変えている場合だけ、チェックしてください。UniEnterはそのアプリに手を出さなくなります。LINEとSlackは自動で確かめます。")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -107,7 +107,7 @@ struct TutorialView: View {
 
             Spacer(minLength: 0)
 
-            Text("対象アプリはすべてONで始まります。メニューバーの ⏎ からいつでも変更できます。\n14日間はすべての機能を無料で使えます。")
+            Text("SlackやChatGPTで、Enterを押して試してみてください。\nあとで⌘Enterで送れないと気付いたら、メニューバーの ⏎ から直せます。")
                 .font(.caption2)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

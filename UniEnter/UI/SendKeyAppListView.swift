@@ -71,34 +71,13 @@ struct SendKeyAppListView: View {
     private func row(_ app: TargetApp) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 8) {
+                // 自動で確かめたアプリは、手で上書きできないよう固定する(0fa2bfaの方針)。
+                // ただし無効化したトグルはグレーで読めず「選べない」ように見えるので、
+                // 名前は通常の文字色のまま、チェック状態を記号で、分かったことをバッジで示す
                 if model.detectedCmdEnterSendApps.contains(app.bundleID) {
-                    // 自動検出: Enterが「改行」になっている → 素通し対象として固定表示
-                    Toggle(isOn: .constant(true)) {
-                        HStack(spacing: 6) {
-                            Text(app.name)
-                            Text("自動検出")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1)
-                                .background(Color.secondary.opacity(0.15), in: Capsule())
-                        }
-                    }
-                    .disabled(true)
+                    detectedRow(app, checked: true, badge: "自動で確認: Enterで改行 → UniEnterは何もしません")
                 } else if model.detectedStandardApps.contains(app.bundleID) {
-                    // 自動検出: 既定のまま(Enter=送信) → 誤ってチェックできないよう固定表示
-                    Toggle(isOn: .constant(false)) {
-                        HStack(spacing: 6) {
-                            Text(app.name)
-                            Text("自動検出: 既定のまま")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1)
-                                .background(Color.secondary.opacity(0.15), in: Capsule())
-                        }
-                    }
-                    .disabled(true)
+                    detectedRow(app, checked: false, badge: "自動で確認: Enterで送信(初期設定)")
                 } else {
                     Toggle(app.name, isOn: model.alreadyCmdEnter(app))
                 }
@@ -112,12 +91,31 @@ struct SendKeyAppListView: View {
                         .foregroundColor(Color.secondary.opacity(0.7))
                 }
             }
-            if let hint = Self.sendKeyHints[app.bundleID] {
+            if let hint = Self.sendKeyHints[app.bundleID], !model.detectedSendKeys.keys.contains(app.bundleID) {
                 Text(hint)
                     .font(.caption2)
                     .foregroundColor(.secondary)
                     .padding(.leading, 22)
             }
         }
+    }
+
+    private func detectedRow(_ app: TargetApp, checked: Bool, badge: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Image(systemName: checked ? "checkmark.square.fill" : "square")
+                    .foregroundColor(.secondary)
+                Text(app.name)
+                    .fixedSize()
+            }
+            Text(badge)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(Color.secondary.opacity(0.15), in: Capsule())
+                .padding(.leading, 20)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
