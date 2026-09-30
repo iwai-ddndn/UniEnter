@@ -9,5 +9,23 @@
     <link>https://unienter.oc-to.com/</link>
     <language>ja</language>
 <!-- items -->
+    <item>
+      <title>UniEnter 0.3.4</title>
+      <pubDate>Wed, 30 Sep 2026 02:01:51 +0000</pubDate>
+      <sparkle:version>7</sparkle:version>
+      <sparkle:shortVersionString>0.3.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h3>UniEnter 0.3.4</h3>
+<ul>
+<li>Appleの公証に対応しました(インストール時に止められなくなりました)</li>
+<li>メニューの「アップデートを確認…」から、アプリの中で更新できるようになりました(押したときだけ確認します)</li>
+<li>「一時停止」を追加し、止めている間はメニューとアイコンで分かるようにしました</li>
+<li>ライセンス画面から購入できるようになりました</li>
+<li>画面の文言を分かりやすくしました</li>
+</ul>
+]]></description>
+      <enclosure url="https://github.com/iwai-ddndn/UniEnter/releases/download/v0.3.4/UniEnter.zip" type="application/octet-stream" sparkle:edSignature="UY2DFHOPmPC018rFLpVzJ8D6g3oWkYGcFRhIr4kkQlSJI3fJtID977H4e8OWAMfztCaNjIcmttx9genp+40pCw==" length="1668375" />
+    </item>
   </channel>
 </rss>

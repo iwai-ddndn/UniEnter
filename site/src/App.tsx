@@ -804,7 +804,7 @@ function Hero() {
             <PrimaryCTA location="hero" />
             <GhostCTA href="#pricing">価格を見る</GhostCTA>
           </div>
-          <p className="mt-4 text-xs text-[var(--ink-3)]">macOS 13以降 / Mac用インストーラ(.pkg・約3MB)</p>
+          <p className="mt-4 text-xs text-[var(--ink-3)]">macOS 13以降 / Mac用インストーラ(.pkg・約2MB)</p>
         </Reveal>
         <Reveal delay={1250} className="mt-16">
           <ChatPlayground />
@@ -1101,10 +1101,49 @@ function Scene({ step }: { step: number }) {
   )
 }
 
+/* 2色(#rrggbb)を t(0〜1)で混ぜて #rrggbb で返す。背景色をスクロール量に比例して変えるのに使う */
+function mixHex(a: string, b: string, t: number) {
+  const ch = (h: string, i: number) => parseInt(h.slice(i, i + 2), 16)
+  return (
+    "#" +
+    [1, 3, 5]
+      .map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t).toString(16).padStart(2, "0"))
+      .join("")
+  )
+}
+
 function BeforeAfter() {
   const [ref, progress] = useScrollProgress<HTMLElement>("pin")
   const step = Math.min(STORY.length - 1, Math.floor(progress * STORY.length))
   const cur = STORY[step]
+  // セクションが画面に入ってくる量(0→1)。張り付く前から、スクロールに合わせてじわっと暗くするため
+  const [enter, setEnter] = useState(0)
+  useEffect(() => {
+    let raf = 0
+    const update = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const el = ref.current
+        if (!el) return
+        const top = el.getBoundingClientRect().top
+        setEnter(clamp((window.innerHeight - top) / window.innerHeight))
+      })
+    }
+    update()
+    window.addEventListener("scroll", update, { passive: true })
+    window.addEventListener("resize", update)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener("scroll", update)
+      window.removeEventListener("resize", update)
+    }
+  }, [ref])
+  // 「これまで」の沈み具合: 入ってくるにつれて濃くなり、これまでの3場面の間さらに深まり、
+  // 「UniEnterを入れると」(進行度0.6)の直前で一気に晴れる。すべてスクロール量に比例(時間では動かさない)
+  const afterAt = 3 / STORY.length
+  const clearing = clamp((progress - (afterAt - 0.08)) / 0.08)
+  const gloom = enter * (0.35 + 0.65 * clamp(progress / (afterAt - 0.12))) * (1 - clearing)
+  const bg = mixHex(mixHex("#f7f6f2", "#e4e1d9", gloom), "#ffffff", clearing)
   return (
     <section
       ref={ref}
@@ -1114,24 +1153,21 @@ function BeforeAfter() {
     >
       <div className="sticky top-0 flex h-svh items-center overflow-hidden">
         {/* 背景: 「これまで」は周囲がぼんやり暗く沈んだ曇天、「UniEnterを入れると」で一気に晴れる */}
-        <div
-          className="absolute inset-0 transition-colors duration-1000"
-          style={{ backgroundColor: cur.before ? "#e4e1d9" : "#ffffff" }}
-        />
+        <div className="absolute inset-0" style={{ backgroundColor: bg }} />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 transition-opacity duration-1000"
+          className="pointer-events-none absolute inset-0"
           style={{
-            opacity: cur.before ? 1 : 0,
+            opacity: gloom,
             background:
               "radial-gradient(ellipse 70% 65% at 50% 50%, transparent 35%, rgba(29,28,25,0.22) 75%, rgba(29,28,25,0.5) 100%)",
           }}
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 transition-opacity duration-1000"
+          className="pointer-events-none absolute inset-0"
           style={{
-            opacity: cur.before ? 0 : 1,
+            opacity: clearing,
             background: "radial-gradient(ellipse 55% 50% at 70% 50%, rgba(232,243,240,0.9), transparent 70%)",
           }}
         />
@@ -1181,8 +1217,8 @@ function BeforeAfter() {
           </div>
 
           <div
-            className="mx-auto w-full max-w-[400px] transition-[filter,opacity] duration-1000 lg:max-w-[440px]"
-            style={{ filter: cur.before ? "grayscale(0.6) contrast(0.95)" : "none", opacity: cur.before ? 0.92 : 1 }}
+            className="mx-auto w-full max-w-[400px] lg:max-w-[440px]"
+            style={{ filter: `grayscale(${0.6 * gloom}) contrast(${1 - 0.05 * gloom})`, opacity: 1 - 0.08 * gloom }}
           >
             <Scene key={step} step={step} />
           </div>
@@ -1418,51 +1454,14 @@ function Install() {
             </div>
           </StepBlock>
 
-          <StepBlock n={2} title="Macに許可する(初回だけ)">
-            <div className="mb-6 rounded-2xl bg-white p-5 text-sm shadow-[0_10px_30px_-20px_rgba(29,28,25,0.35)]">
-              <p className="mb-1.5 font-bold">なぜMacに止められるの?</p>
-              <p className="leading-relaxed text-[var(--ink-2)]">
-                Appleの公証(年間の開発者登録が必要です)を申請中だからです。ソフトの中身に問題があるという意味ではありません。UniEnterはソースコードをすべて{" "}
-                <a className="underline" href={REPO_URL}>
-                  GitHub
-                </a>{" "}
-                で公開していて、入力した文章をどこにも送りません。
-              </p>
-            </div>
-            <p className="mb-5 text-sm text-[var(--ink-2)]">次の3クリックで開けます。</p>
-            <div className="grid gap-6 sm:grid-cols-3">
-              {[
-                {
-                  t: "1.「完了」を押す(「ゴミ箱に入れる」は押さない)",
-                  src: "./assets/install/gatekeeper.png",
-                  alt: "pkgを開いたときにmacOSが出す確認ダイアログ",
-                  cap: "「完了」を押します。ここでゴミ箱に入れないでください。",
-                },
-                {
-                  t: "2. システム設定 →「プライバシーとセキュリティ」→ 下までスクロール →「このまま開く」",
-                  src: "./assets/install/settings-security.png",
-                  alt: "システム設定のプライバシーとセキュリティ画面。下部のセキュリティ項目",
-                  cap: "この項目は、開こうとした直後にだけ表示されます。",
-                },
-                {
-                  t: "3. Touch IDまたはパスワードで確認 → インストーラが始まります",
-                  src: "./assets/install/auth.png",
-                  alt: "Touch IDまたはパスワードを求める確認シート",
-                  cap: "ここまでで、インストールは終わりです。",
-                },
-              ].map((c, i) => (
-                <Reveal key={c.src} delay={i * 110}>
-                  <p className="mb-2 text-sm font-semibold sm:min-h-20">{c.t}</p>
-                  <Shot src={c.src} alt={c.alt} caption={c.cap} />
-                </Reveal>
-              ))}
-            </div>
+          <StepBlock n={2} title="インストーラを進める">
+            <p className="leading-relaxed text-[var(--ink-2)]">
+              インストーラが開いたら「続ける」→「インストール」と進み、Macのパスワード(またはTouch ID)で確認します。UniEnterはAppleの公証済みなので、警告なしでそのまま入ります。
+            </p>
             <details className="group mt-6 rounded-xl border border-[var(--line)] bg-white/60 px-4 py-3 text-sm">
               <summary className="cursor-pointer font-semibold marker:text-[var(--ink-3)]">うまくいかないときは</summary>
               <ul className="mt-3 space-y-2 text-[var(--ink-2)]">
-                <li>手順2の表示が見つからない → 手順1をやり直してください。この項目は、開こうとした直後にだけ表示されます。</li>
-                <li>macOS 15以降では、Finderで右クリック →「開く」は使えません。</li>
-                <li>zip版も同じ手順です。</li>
+                <li>zip版は、展開した UniEnter を「アプリケーション」フォルダに入れてから開いてください。</li>
                 <li>
                   それでも開けないときは{" "}
                   <a className="underline" href="mailto:info@oc-to.com">
@@ -1558,20 +1557,21 @@ function Pricing() {
                 </span>
                 <span className="text-base font-medium whitespace-nowrap text-[var(--ink-3)]">(税込)</span>
               </p>
-              <div className="mt-8">
-                <p className="mb-2.5 text-xs font-bold tracking-[0.15em] text-[var(--ink-3)]">まずは 14日間、全機能を無料で</p>
-                <div className="grid grid-cols-7 gap-1.5">
-                  {Array.from({ length: 14 }, (_, i) => (
-                    <span
-                      key={i}
-                      className="day flex aspect-square items-center justify-center rounded-md bg-white text-[10px] font-bold text-[var(--ink-3)] shadow-[inset_0_0_0_1px_var(--line)]"
-                      style={vars({ "--i": i })}
-                    >
-                      {i + 1}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              {/* 使い始めてから買うまでの流れ。2段の縦タイムライン */}
+              <ol className="relative mt-9 space-y-5 pl-7">
+                <span aria-hidden className="absolute top-2 bottom-2 left-[7px] w-px bg-[var(--line)]" />
+                {[
+                  { dot: "bg-[var(--teal)]", label: "まず", title: "14日間、全機能を無料で", body: "登録もカードも不要。ダウンロードするだけです。" },
+                  { dot: "bg-[var(--ink)]", label: "気に入ったら", title: "¥1,480で買い切り", body: "合わなければ、削除するだけ。" },
+                ].map((r, i) => (
+                  <li key={r.title} className="rv-child relative" style={vars({ "--d": `${300 + i * 150}ms` })}>
+                    <span aria-hidden className={`absolute top-1.5 -left-7 size-[15px] rounded-full border-[3px] border-[var(--paper)] ${r.dot}`} />
+                    <p className="text-[11px] font-bold tracking-[0.15em] text-[var(--ink-3)]">{r.label}</p>
+                    <p className="mt-0.5 font-bold">{r.title}</p>
+                    <p className="mt-0.5 text-sm text-[var(--ink-2)]">{r.body}</p>
+                  </li>
+                ))}
+              </ol>
             </div>
             <div className="flex flex-col justify-center border-t border-[var(--line)] bg-white p-8 sm:p-12 md:border-t-0 md:border-l">
               <ul className="space-y-4 text-[15px]">
@@ -1761,7 +1761,7 @@ function FinalCTA() {
             </div>
             <GhostCTA href="#install">開き方(2分)</GhostCTA>
           </div>
-          <p className="mt-4 text-xs text-[var(--ink-3)]">macOS 13以降 / Mac用インストーラ(.pkg・約3MB)</p>
+          <p className="mt-4 text-xs text-[var(--ink-3)]">macOS 13以降 / Mac用インストーラ(.pkg・約2MB)</p>
         </Reveal>
       </div>
     </section>

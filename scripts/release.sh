@@ -31,17 +31,44 @@ PLIST_VERSION=$(grep 'CFBundleShortVersionString' project.yml | grep -o '"[^"]*"
 echo "== ビルド($APP_IDENTITY)"
 xcodegen generate -q
 xcodebuild -project UniEnter.xcodeproj -scheme UniEnter -configuration Release \
+  -destination 'generic/platform=macOS' \
   -derivedDataPath build DEVELOPMENT_TEAM="$TEAM_ID" build | grep -E "(error:|\*\* BUILD)" || true
 test -d "$APP"
+
+# Sparkle 内の補助プログラム(Autoupdate・Updater・XPC)は Xcode の build では Developer ID で
+# 署名し直されないので、内側から順に署名し直し、最後にアプリ本体を署名し直す(Sparkle公式の手順)
+SIGN=(codesign -f -s "$APP_IDENTITY" -o runtime --timestamp)
+FW="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+"${SIGN[@]}" "$FW/XPCServices/Installer.xpc"
+"${SIGN[@]}" --preserve-metadata=entitlements "$FW/XPCServices/Downloader.xpc"
+"${SIGN[@]}" "$FW/Autoupdate"
+"${SIGN[@]}" "$FW/Updater.app"
+"${SIGN[@]}" "$APP/Contents/Frameworks/Sparkle.framework"
+"${SIGN[@]}" "$APP"
+codesign -d --entitlements - "$APP" 2>/dev/null | grep get-task-allow >/dev/null && { echo "get-task-allow が残っています"; exit 1; }
 codesign --verify --deep --strict "$APP"
-codesign -dv "$APP" 2>&1 | grep -q "flags=.*runtime" || { echo "Hardened Runtime が有効になっていません"; exit 1; }
+SIGN_INFO=$(codesign -dv "$APP" 2>&1)   # grep -q で直接パイプすると pipefail で誤判定するので一度変数に受ける
+echo "$SIGN_INFO" | grep "flags=.*runtime" >/dev/null || { echo "Hardened Runtime が有効になっていません"; exit 1; }
+
+# 公証して、Accepted 以外なら理由を表示して止める(notarytool は Invalid でも終了コード0を返す)
+notarize() {
+  local out id status
+  out=$(xcrun notarytool submit "$1" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json)
+  id=$(echo "$out" | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
+  status=$(echo "$out" | python3 -c "import sys,json;print(json.load(sys.stdin)['status'])")
+  echo "公証 $1: $status ($id)"
+  if [ "$status" != "Accepted" ]; then
+    xcrun notarytool log "$id" --keychain-profile "$NOTARY_PROFILE"
+    exit 1
+  fi
+}
 
 mkdir -p dist
 rm -f dist/UniEnter.zip dist/UniEnter.pkg dist/notarize.zip
 
 echo "== アプリを公証"
 ditto -c -k --keepParent "$APP" dist/notarize.zip
-xcrun notarytool submit dist/notarize.zip --keychain-profile "$NOTARY_PROFILE" --wait
+notarize dist/notarize.zip
 xcrun stapler staple "$APP"
 rm -f dist/notarize.zip
 
@@ -60,7 +87,7 @@ productbuild --synthesize --package dist/UniEnter-component.pkg dist/distributio
 sed -i '' 's|<installer-gui-script minSpecVersion="1">|<installer-gui-script minSpecVersion="1"><title>UniEnter</title>|' dist/distribution.xml
 productbuild --distribution dist/distribution.xml --package-path dist --sign "$PKG_IDENTITY" dist/UniEnter.pkg
 rm -f dist/UniEnter-component.pkg dist/distribution.xml
-xcrun notarytool submit dist/UniEnter.pkg --keychain-profile "$NOTARY_PROFILE" --wait
+notarize dist/UniEnter.pkg
 xcrun stapler staple dist/UniEnter.pkg
 
 echo "== Gatekeeper で確認"
@@ -78,7 +105,10 @@ ITEM="    <item>
       <sparkle:version>${BUILD_NUMBER}</sparkle:version>
       <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>${MIN_OS}</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/iwai-ddndn/UniEnter/releases/tag/v${VERSION}</sparkle:releaseNotesLink>
+      <description><![CDATA[
+<h3>UniEnter ${VERSION}</h3>
+<p>(更新内容を書く。アプリの更新画面にそのまま表示される)</p>
+]]></description>
       <enclosure url=\"${DOWNLOAD_BASE}/UniEnter.zip\" type=\"application/octet-stream\" ${SIG_ATTRS} />
     </item>"
 python3 - "$APPCAST" "$ITEM" <<'PY'
@@ -94,7 +124,8 @@ ls -lh dist/UniEnter.zip dist/UniEnter.pkg
 cat <<NEXT
 次の手順(公開):
   1. gh release create v${VERSION} dist/UniEnter.pkg dist/UniEnter.zip --title "v${VERSION}" --notes-file <リリースノート>
-  2. cd site && npm run build   # appcast.xml を docs/ へ
-  3. git add project.yml site/public/appcast.xml docs && git commit && git push
+  2. site/public/appcast.xml の新しい <description> に更新内容(HTML)を書く
+  3. cd site && npm run build   # appcast.xml を docs/ へ
+  4. git add project.yml site/public/appcast.xml docs && git commit && git push
      (appcast は GitHub のリリースを作ってから push する。先に push すると、まだ無い zip を指してしまう)
 NEXT

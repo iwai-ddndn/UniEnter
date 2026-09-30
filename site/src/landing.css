@@ -347,24 +347,6 @@
   transition: transform 0.25s ease-out;
   transform-style: preserve-3d;
 }
-.lpn .day {
-  transform: scale(0.4);
-  opacity: 0;
-  transition:
-    transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1.4),
-    opacity 0.3s,
-    background 0.3s,
-    color 0.3s;
-  transition-delay: calc(var(--i) * 45ms);
-}
-.lpn .in .day {
-  transform: none;
-  opacity: 1;
-  background: var(--teal-tint);
-  color: var(--teal-ink);
-  box-shadow: none;
-}
-
 /* ── FAQ ────────────────────────────────── */
 .lpn .faq [data-slot="accordion-trigger"] {
   font-size: 0.95rem;

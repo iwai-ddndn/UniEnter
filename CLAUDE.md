@@ -66,6 +66,7 @@ cd site && npm run build
 - **アプリ内アップデート(Sparkle 2)**: メニュー「アップデートを確認…」を**押したときだけ** `https://unienter.oc-to.com/appcast.xml`(ソースは `site/public/appcast.xml`)を取得し、更新ファイルはGitHubリリースのzip。自動確認・自動インストール・システム情報送信はInfo.plistで全部オフ(`project.yml`)。**「勝手に通信しない」はLP・プライバシーポリシー・FAQ・SNS素材の約束なので、自動確認を入れるならそれらを全部書き換えること**。更新ファイルはEdDSA署名(公開鍵は `SUPublicEDKey`、秘密鍵はログインキーチェーンの `dev.iwai.UniEnter` アカウント+バックアップ `license-signing/sparkle-private-key.txt`・git管理外・**失うと以後のアップデートを配れない**)
 - **購入受付前の表示**: `LicenseView.swift` の `purchaseOpen` が false の間は「購入について(Webサイト)」+準備中の注記を出す(LPも「購入は準備中」なので行き止まりを避ける)。受付開始時に true にする
 - **メニューバー**: ステータス行 / 一時停止 / 設定… / 使い方… / ⌘Enterで送信できないとき… / ライセンス… / 終了。ステータス行は「止まっているのに動いて見える」を避けるため、許可切れ・トライアル終了・タップ停止のときは押して直せる項目になる。ブラウザ判定の診断はOptionキーを押して開いたときだけ出る
+- **言語**: `CFBundleDevelopmentRegion = ja` / `CFBundleLocalizations = [ja]`。これが無いとSparkleの画面や入力欄の右クリックメニュー等、システム・ライブラリ側の文言が英語になる
 - **アプリの色**: `Assets.xcassets/AccentColor`(ライト #0f7b6c / ダーク #4fb3a3)をグローバルアクセントに設定済み。「→ 改行」は accentColor、「→ 送信」は primary。青・緑・オレンジの文字色は使わない(アイコンのみ可)
 - **決済はPolar.sh予定**(Paddleはドメイン審査が進まず断念): 手順は `notes/POLAR-SETUP.md`、ユーザー作業の全体は `notes/PAYMENT-CHECKLIST.md`。チェックアウトURL確定後、LP価格セクションのボタンと `UniEnter/UI/LicenseView.swift` の `purchaseURL` を差し替える
 
@@ -89,7 +90,7 @@ cd site && npm run build
 
 ## 公開状態(重要)
 
-- **2026-07-22に公開済み**: リポジトリpublic・GitHub Pages有効。最新リリースはv0.3.2(2026-09-09、pkg+zip添付。LPのDLボタンは `releases/latest` 参照なので自動で最新になる)
+- **2026-07-22に公開済み**: リポジトリpublic・GitHub Pages有効。最新リリースは**v0.3.4(2026-09-30、初の公証済み・アプリ内アップデート対応)**。pkg+zip添付。LPのDLボタンは `releases/latest` 参照なので自動で最新になる
 - LP: https://unienter.oc-to.com/(利用規約 terms.html / プライバシーポリシー privacy.html も公開済み)
 - リリース: https://github.com/iwai-ddndn/UniEnter/releases
 - コミットメールはGitHub noreplyに統一済み(個人メールをコミットに入れない)。再リリース時は `scripts/release.sh` → `scripts/publish.sh`
@@ -105,20 +106,17 @@ cd site && npm run build
 - ヒーローは `App.tsx` の `ChatPlayground`: チャット → AIエージェントの自動デモを交互に流し(上のタブで切替も可)、入力欄をクリックすると実際に打てる(Enter=改行、⌘Enter=送信、変換中のEnterは無視)。**主CTAはデモより上**に置いてファーストビューに入れる。比較検討用の `hero-lab.html` は本番未リンクの内部ページ
 - Before/Afterは説明文(大きな1文)が主役でデモが従。デモの方が目立つと「何が起きているか分からない」とのFBがあった
 - 画像は実物のスクリーンショットのみ(`screenshots/app/` からWebP化)。生成AI画像・ストック写真は置かない。すべて `loading="lazy"` + `rounded-lg border`
-- はじめかたのmacOSダイアログ3枚は `site/public/assets/install/`(`gatekeeper.png` / `settings-security.png` / `auth.png`)。無いあいだは点線の枠にフォールバックする
+- はじめかたは公証済みになったので「ダウンロード → インストーラを進める → 使うアプリにチェック」の3手順。旧Gatekeeper回避手順の画像(`site/public/assets/install/gatekeeper.png` 等)は未使用
 - 対象サービスの表示は `brands.tsx` の `services` に集約(simple-icons+頭文字タイル)
 - 価格: ¥1,480(税込・買い切り)表記。変更時はLPとPaddle両方を揃える
 - 商標: 各社ロゴの扱いは慎重に(名称表記は可、公式ロゴは原則許諾必要)。フッターの商標帰属表記を消さない
 
 ## 残タスク(2026-07-25時点)
 
-1. **公証(最優先・ユーザー作業)**: Apple Developer Program加入 → Developer ID署名+公証。
-   **2026-07-25の先行テストで、macOS 15の2台がどちらもインストールできず脱落した**
-   (macOS 15以降は右クリック→「開く」の回避策が廃止され、システム設定からの解除しかない)。
-   LPに手順セクションを用意して緩和したが、これは対症療法。**公証前に広く告知しないこと**。
-   詳細はObsidian Vaultの `30_Notes/UniEnter/UniEnter-先行テストFB分析（Claude版）.md`(同Fable版もあり)
+1. **公証は2026-09-30に完了**(v0.3.4〜。Developer ID: Soichiro Iwai / Team WS5J5S84H6、公証の認証情報はキーチェーンのプロファイル `unienter-notary`)。
+   0.3.3以前のユーザーは一度だけ手動で入れ直しが必要(署名が変わるのでアクセシビリティ許可もやり直し)。告知解禁の判断材料は `marketing/LAUNCH-PLAN.md` のGO条件
 2. **課金は2026-09-29に稼働開始**: Polar(組織 `oc-to`)のCheckout Link → Worker `https://unienter-license.oc-to.workers.dev`(`license-signing/worker/`)がキーを発行・表示。LPの価格欄に「購入する」、特商法表記 `tokushoho.html` 公開済み。
-   アプリ側も `LicenseView.swift` の `purchaseOpen = true`(購入ボタン→Polarのチェックアウト)に切替済み。ユーザーに届くのは次のリリース(公証と同時のv0.3.4予定)。残り(任意): `POLAR_ACCESS_TOKEN`、購入者へのキーのメール送信(Resend)
+   アプリ側も `LicenseView.swift` の `purchaseOpen = true`(購入ボタン→Polarのチェックアウト)。v0.3.4で配布済み。残り(任意): `POLAR_ACCESS_TOKEN`、購入者へのキーのメール送信(Resend)
 3. リリース手順: `project.yml` の `CFBundleShortVersionString` と `CFBundleVersion`(+1。Sparkleはこちらで新旧を比べる)を上げる → `scripts/release.sh X.Y.Z`(Developer ID署名・公証・ステープル・pkg署名・appcast追記まで自動)→ 表示される手順どおり GitHubリリース作成 → LPビルド → push(**appcastはリリース作成後にpush**)。Releaseは Developer ID 署名+Hardened Runtime、Debugは Apple Development 固定のまま
 4. アプリアイコンはフラット版(ティール地に白の↵、`design/app-icon/` がソース。再生成手順は同READMEを参照)に差し替え済み
 5. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
