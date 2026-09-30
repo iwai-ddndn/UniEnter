@@ -26,5 +26,15 @@
 	<string>© 2026 octo (oc-to.com)</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUAllowsAutomaticUpdates</key>
+	<false/>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUEnableSystemProfiling</key>
+	<false/>
+	<key>SUFeedURL</key>
+	<string>https://unienter.oc-to.com/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>OepC/ZJSLtD5bn2gZ4tLbtLAOnetlnh9OLTg1IZtWQg=</string>
 </dict>
 </plist>

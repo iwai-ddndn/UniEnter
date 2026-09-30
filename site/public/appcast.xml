@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  UniEnter のアプリ内アップデート情報(Sparkle)。scripts/release.sh が <!- - items - -> の直後に新しい版を追記する。
+  アプリはメニューの「アップデートを確認…」を押したときだけこのファイルを取得する(自動では取得しない)。
+-->
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>UniEnter</title>
+    <link>https://unienter.oc-to.com/</link>
+    <language>ja</language>
+<!-- items -->
+  </channel>
+</rss>

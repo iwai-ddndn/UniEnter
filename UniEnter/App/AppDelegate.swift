@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import os
+import Sparkle
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let log = Logger(subsystem: "dev.iwai.UniEnter", category: "app")
@@ -22,6 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var onboardingWindow: NSWindow?
     private var licenseWindow: NSWindow?
     private var tutorialWindow: NSWindow?
+    /// アプリ内アップデート(Sparkle)。自動確認はしない(Info.plist の SUEnableAutomaticChecks = NO)。
+    /// 通信するのはメニューの「アップデートを確認…」を押したときだけ
+    private var updaterController: SPUStandardUpdaterController?
 
     /// トライアル/ライセンスが有効か(コールバックはこのキャッシュのみ参照)
     private var isEntitled = true
@@ -67,6 +71,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ScreenshotMode.runIfRequested() { return }
         #endif
 
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
         enabledDesktopIDs = settingsStore.enabledDesktopIDs
         enabledWebIDs = settingsStore.enabledWebIDs
         cmdEnterSendApps = settingsStore.cmdEnterSendApps
@@ -450,6 +456,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let licenseItem = NSMenuItem(title: "ライセンス…", action: #selector(openLicense), keyEquivalent: "")
         licenseItem.target = self
         menu.addItem(licenseItem)
+        if let updaterController {
+            let updateItem = NSMenuItem(title: "アップデートを確認…",
+                                        action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)),
+                                        keyEquivalent: "")
+            updateItem.target = updaterController
+            menu.addItem(updateItem)
+        }
         diagMenuItem = NSMenuItem(title: "ブラウザ判定を診断(ログ出力)", action: #selector(dumpBrowserDiagnostics), keyEquivalent: "")
         diagMenuItem.target = self
         diagMenuItem.isHidden = true

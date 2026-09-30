@@ -414,7 +414,7 @@ export function Frame({ t, fmt }: { t: number; fmt: Fmt }) {
         <div style={{ height: story ? 40 : 20 }} />
         <div className={story ? "flex w-[400px] flex-col gap-3" : "grid w-[500px] grid-cols-3 gap-3"}>
           {[
-            { I: WifiOff, h: "通信しない", b: "インターネット通信を一切しません" },
+            { I: WifiOff, h: "勝手に通信しない", b: "打った文字はどこにも送りません" },
             { I: Languages, h: "変換中は触れない", b: "日本語の変換の確定は、そのまま" },
             { I: Code, h: "中身は公開", b: "ソースコードはGitHubで公開" },
           ].map(({ I, h, b }, i) => (

@@ -1322,7 +1322,7 @@ function Safety() {
 
         <div className="mt-16 grid gap-4 sm:grid-cols-3">
           {[
-            { icon: WifiOff, title: "通信しない", body: <>インターネット通信を一切行いません。打った文字の記録も保存もしません。</> },
+            { icon: WifiOff, title: "勝手に通信しない", body: <>通信するのは「アップデートを確認」を押したときだけ。打った文字の記録も保存も送信もしません。</> },
             { icon: Languages, title: "変換中は触れない", body: <>日本語の変換を確定するEnterは、そのまま通します。</> },
             {
               icon: Code,
@@ -1426,7 +1426,7 @@ function Install() {
                 <a className="underline" href={REPO_URL}>
                   GitHub
                 </a>{" "}
-                で公開していて、インターネット通信を一切行いません。
+                で公開していて、入力した文章をどこにも送りません。
               </p>
             </div>
             <p className="mb-5 text-sm text-[var(--ink-2)]">次の3クリックで開けます。</p>

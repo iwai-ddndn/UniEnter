@@ -148,7 +148,7 @@ const Sub = ({ children, size = 15, dark }: { children: ReactNode; size?: number
 )
 
 const SAFETY = [
-  { I: WifiOff, h: "通信しない", b: "インターネット通信を一切しません。打った文字の記録も保存もしません。" },
+  { I: WifiOff, h: "勝手に通信しない", b: "通信するのはアップデートを確認したときだけ。打った文字の記録も保存も送信もしません。" },
   { I: Languages, h: "変換中は触れない", b: "日本語の変換を確定するEnterは、そのまま通します。" },
   { I: Code, h: "中身は公開", b: "ソースコードはすべてGitHubで読めます。" },
 ]

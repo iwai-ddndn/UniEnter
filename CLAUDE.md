@@ -63,6 +63,7 @@ cd site && npm run build
 - **アプリ側送信キーの宣言と自動検出**: Slack等は設定で送信キーを⌘Enterに反転でき、その場合⌘Enterの意味が逆転して書き換えが破綻する。LINEとSlackは設定ファイルから自動検出する(`SendKeyDetector`: LINEは `LINE.ini` の `chat_sendkey=1`、SlackはIndexedDB blobをSnappy伸長して `msg_input_send_btn`=true。どちらも非公開実装依存のベストエフォートで、読めない場合はunknownに倒す)。それ以外のアプリと検出失敗時は、設定の「詳細オプション」でユーザーに宣言してもらう(素通し判定は宣言∪検出)。**macOS 15+は他アプリのコンテナ初アクセスで許可ダイアログが出て、ユーザーが答えるまで `open()` がブロックしたままになる**(実機で確認済み)。そのため読み取りは専用の並列キューのみで行い、起動時ではなく**対象アプリを開いた直後**に走らせる(ダイアログに文脈を与える)。unknownに終わったら自動再試行しない(ダイアログの繰り返しを避ける)。やり直しは設定の「LINE・Slackの設定を読み直す」から
 - **設定モデル**: `enabledDesktopIDs` / `enabledWebIDs`(サービス×面で独立、旧`enabledBundleIDs`+`browserSupportEnabled`から自動移行)。対象サービスはAppRegistryに集約(hasDesktop/hasWeb、aliases)
 - **課金**: 買い切り+14日無料トライアル。トライアル開始日時はUserDefaults+Application Supportマーカーの二重記録(早い方採用、再インストール耐性)。ライセンスはEd25519署名キーのオフライン検証(公開鍵はLicenseManagerに埋め込み)。発行: `swift license-signing/issue.swift 購入者メール`。期限切れ時は書き換えのみ停止
+- **アプリ内アップデート(Sparkle 2)**: メニュー「アップデートを確認…」を**押したときだけ** `https://unienter.oc-to.com/appcast.xml`(ソースは `site/public/appcast.xml`)を取得し、更新ファイルはGitHubリリースのzip。自動確認・自動インストール・システム情報送信はInfo.plistで全部オフ(`project.yml`)。**「勝手に通信しない」はLP・プライバシーポリシー・FAQ・SNS素材の約束なので、自動確認を入れるならそれらを全部書き換えること**。更新ファイルはEdDSA署名(公開鍵は `SUPublicEDKey`、秘密鍵はログインキーチェーンの `dev.iwai.UniEnter` アカウント+バックアップ `license-signing/sparkle-private-key.txt`・git管理外・**失うと以後のアップデートを配れない**)
 - **購入受付前の表示**: `LicenseView.swift` の `purchaseOpen` が false の間は「購入について(Webサイト)」+準備中の注記を出す(LPも「購入は準備中」なので行き止まりを避ける)。受付開始時に true にする
 - **メニューバー**: ステータス行 / 一時停止 / 設定… / 使い方… / ⌘Enterで送信できないとき… / ライセンス… / 終了。ステータス行は「止まっているのに動いて見える」を避けるため、許可切れ・トライアル終了・タップ停止のときは押して直せる項目になる。ブラウザ判定の診断はOptionキーを押して開いたときだけ出る
 - **アプリの色**: `Assets.xcassets/AccentColor`(ライト #0f7b6c / ダーク #4fb3a3)をグローバルアクセントに設定済み。「→ 改行」は accentColor、「→ 送信」は primary。青・緑・オレンジの文字色は使わない(アイコンのみ可)
@@ -118,7 +119,7 @@ cd site && npm run build
    詳細はObsidian Vaultの `30_Notes/UniEnter/UniEnter-先行テストFB分析（Claude版）.md`(同Fable版もあり)
 2. **課金は2026-09-29に稼働開始**: Polar(組織 `oc-to`)のCheckout Link → Worker `https://unienter-license.oc-to.workers.dev`(`license-signing/worker/`)がキーを発行・表示。LPの価格欄に「購入する」、特商法表記 `tokushoho.html` 公開済み。
    アプリ側も `LicenseView.swift` の `purchaseOpen = true`(購入ボタン→Polarのチェックアウト)に切替済み。ユーザーに届くのは次のリリース(公証と同時のv0.3.4予定)。残り(任意): `POLAR_ACCESS_TOKEN`、購入者へのキーのメール送信(Resend)
-3. リリース手順: `project.yml` の `CFBundleShortVersionString` を上げる → `scripts/release.sh X.Y.Z` → `gh release create vX.Y.Z dist/UniEnter.pkg dist/UniEnter.zip`(publish.shは既存リリースへの添付用)
+3. リリース手順: `project.yml` の `CFBundleShortVersionString` と `CFBundleVersion`(+1。Sparkleはこちらで新旧を比べる)を上げる → `scripts/release.sh X.Y.Z`(Developer ID署名・公証・ステープル・pkg署名・appcast追記まで自動)→ 表示される手順どおり GitHubリリース作成 → LPビルド → push(**appcastはリリース作成後にpush**)。Releaseは Developer ID 署名+Hardened Runtime、Debugは Apple Development 固定のまま
 4. アプリアイコンはフラット版(ティール地に白の↵、`design/app-icon/` がソース。再生成手順は同READMEを参照)に差し替え済み
 5. Gemini公式MacアプリのbundleID確認(判明したらAppRegistry.aliasesへ)
 6. Chatworkは対象から除外済み(ユーザーが未使用・検証不能のため)。復活させる場合は過去コミット参照

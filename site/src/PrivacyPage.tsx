@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <LegalLayout
       title="プライバシーポリシー"
-      established="制定日: 2026年7月22日 / 最終改定日: 2026年9月29日"
+      established="制定日: 2026年7月22日 / 最終改定日: 2026年9月30日"
     >
       <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
         octo(https://oc-to.com、以下「提供者」)は、macOS用ソフトウェア「UniEnter」(以下「本アプリ」)
@@ -23,11 +23,12 @@ export default function PrivacyPage() {
         <ul className="list-inside list-disc space-y-1">
           <li>判定に使用するのは、Enter関連のキーイベント、前面のアプリ・タブ、日本語入力の状態のみです</li>
           <li>アクセシビリティ権限は、前面のアプリ・ブラウザタブの判定のためだけに使用します</li>
-          <li>本アプリは現在、外部との通信を行いません(利用状況の解析・広告も一切ありません)</li>
+          <li>本アプリが外部と通信するのは、利用者がメニューの「アップデートを確認…」を選んだときだけです。そのときに限り、更新情報(unienter.oc-to.com)と更新ファイル(github.com)を取得します。自動での確認は行いません</li>
+          <li>この通信で、入力内容・利用状況・端末の情報を送信することはありません(利用状況の解析・広告も一切ありません)</li>
           <li>設定・ライセンスキー・トライアル開始日は、利用者のMac内にのみ保存されます</li>
         </ul>
         <p>
-          将来、アップデート確認などの通信機能を追加する場合は、本ポリシーを改定のうえ告知します。
+          上記以外の通信機能を追加する場合は、本ポリシーを改定のうえ告知します。
         </p>
       </LegalSection>
 
