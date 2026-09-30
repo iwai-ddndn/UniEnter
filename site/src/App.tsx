@@ -1153,24 +1153,35 @@ function BeforeAfter() {
     >
       <div className="sticky top-0 flex h-svh items-center overflow-hidden">
         {/* 背景: 「これまで」は周囲がぼんやり暗く沈んだ曇天、「UniEnterを入れると」で一気に晴れる */}
-        <div className="absolute inset-0" style={{ backgroundColor: bg }} />
+        {/* 背景一式。画面に入ってくる途中は上端をぼかしてヒーローの地色に溶かし、境目を作らない
+            (張り付いたら enter=1 でぼかしは消える) */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
-            opacity: gloom,
-            background:
-              "radial-gradient(ellipse 70% 65% at 50% 50%, transparent 35%, rgba(29,28,25,0.22) 75%, rgba(29,28,25,0.5) 100%)",
+            maskImage: `linear-gradient(to bottom, transparent 0%, #000 ${Math.round(45 * (1 - enter))}%)`,
+            WebkitMaskImage: `linear-gradient(to bottom, transparent 0%, #000 ${Math.round(45 * (1 - enter))}%)`,
           }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            opacity: clearing,
-            background: "radial-gradient(ellipse 55% 50% at 70% 50%, rgba(232,243,240,0.9), transparent 70%)",
-          }}
-        />
+        >
+          <div className="absolute inset-0" style={{ backgroundColor: bg }} />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              opacity: gloom,
+              background:
+                "radial-gradient(ellipse 70% 65% at 50% 50%, transparent 35%, rgba(29,28,25,0.22) 75%, rgba(29,28,25,0.5) 100%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              opacity: clearing,
+              background: "radial-gradient(ellipse 55% 50% at 70% 50%, rgba(232,243,240,0.9), transparent 70%)",
+            }}
+          />
+        </div>
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-5 px-5 pt-14 lg:grid-cols-[1.2fr_0.8fr] lg:gap-14 lg:pt-0">
           <div>
             <Eyebrow>BEFORE / AFTER</Eyebrow>
