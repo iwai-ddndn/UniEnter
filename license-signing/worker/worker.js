@@ -18,7 +18,8 @@
 //   POLAR_API_BASE         https://api.polar.sh(sandboxは https://sandbox-api.polar.sh)
 //   LICENSE_PUBLIC_KEY     公開鍵base64(LicenseManager.publicKeyBase64と同値)
 //   LICENSE_EMAIL_ENABLED  明示的に "true" にした場合のみ新規発行分を送信対象にする
-//   MAIL_FROM              メール送信元(例: "UniEnter <license@oc-to.com>")
+//   MAIL_FROM              メール送信元(例: "UniEnter <licenses@notify.oc-to.com>")
+//   MAIL_REPLY_TO          購入者からの返信先(info@oc-to.com)
 // KV: LICENSES(キーは order:<order_id> と checkout:<checkout_id> の2本立てで同じレコードを保存)
 
 const encoder = new TextEncoder()
@@ -144,7 +145,7 @@ function newRecord(env, email, key) {
 async function sendLicenseMail(env, record, orderId) {
   // 過去レコードを有効化と同時に一斉送信しない。新規発行時に予約したものだけ送る。
   if (env.LICENSE_EMAIL_ENABLED !== "true" || record.mail?.status !== "pending") return null
-  if (!env.RESEND_API_KEY || !env.MAIL_FROM) throw new Error("mail configuration missing")
+  if (!env.RESEND_API_KEY || !env.MAIL_FROM || !env.MAIL_REPLY_TO) throw new Error("mail configuration missing")
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -154,6 +155,7 @@ async function sendLicenseMail(env, record, orderId) {
     },
     body: JSON.stringify({
       from: env.MAIL_FROM,
+      reply_to: env.MAIL_REPLY_TO,
       to: [record.email],
       subject: "UniEnter ライセンスキーのお届け",
       text: [

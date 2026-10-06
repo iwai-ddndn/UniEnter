@@ -15,4 +15,5 @@ POLAR_API_BASE = "https://api.polar.sh"
 # LicenseManager.publicKeyBase64 と同値(公開情報)
 LICENSE_PUBLIC_KEY = "GnuD4CdMgZHXooBnItp7HxOZUQD7Ai/fURl0oqidhXk="
 # Resend利用時のみ(ドメイン認証済みの送信元)
-MAIL_FROM = "UniEnter <license@oc-to.com>"
+MAIL_FROM = "UniEnter <licenses@notify.oc-to.com>"
+MAIL_REPLY_TO = "info@oc-to.com"

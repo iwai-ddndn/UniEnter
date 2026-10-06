@@ -24,7 +24,7 @@ wrangler kv namespace create LICENSES
 wrangler secret put LICENSE_PRIVATE_KEY   # ../keys.txt の PRIVATE: 以降のbase64
 wrangler secret put POLAR_WEBHOOK_SECRET  # 下記のWebhookエンドポイント作成時に表示される(whsec_...)
 wrangler secret put POLAR_ACCESS_TOKEN    # Polar Dashboard → Settings → Developers → Organization access tokens(任意だが推奨)
-wrangler secret put RESEND_API_KEY        # メール送信の承認後、既存の送信権限を持つキーを登録
+wrangler versions secret put RESEND_API_KEY  # 本人が対話入力。新version保存のみ、本番へは未デプロイ
 
 wrangler deploy
 ```
@@ -94,3 +94,25 @@ KVは強整合なロックではない。長時間障害後の手動再送では
 参照: https://resend.com/docs/dashboard/emails/idempotency-keys
 
 秘密鍵・購入キー・メール本文・API応答本文はログへ出力しない。
+
+
+### 承認済み送信元と本人による秘密値入力
+
+- From: `UniEnter <licenses@notify.oc-to.com>`
+- Reply-To: `info@oc-to.com` (`MAIL_REPLY_TO`。欠落時は送信せず503)
+- 送信ドメイン: `notify.oc-to.com`。受信は有効にしない。開封・クリック追跡OFF。
+- Worker名: `unienter-license`
+- Secret名: `RESEND_API_KEY` (平文の環境変数として保存しない)
+
+本人のターミナルでWorkerディレクトリから `wrangler versions secret put RESEND_API_KEY` を実行し、
+プロンプトへ本人がキーを貼り付ける。キーを引数・チャット・ログ・設定ファイルへ書かない。
+このコマンドは新versionの保存のみ。対して `wrangler secret put` とダッシュボードの
+Variables and Secrets → Deploy は直ちにデプロイするため、今回の準備段階では使わない。
+保存したversion IDだけ共有し、秘密値は共有しない。
+
+未デプロイversionに保存したSecretは、後続のcode uploadが継承していると決めつけない。
+デプロイ候補versionのbinding metadataで、修正済みcodeとSecret名の両方を確認する。
+本人入力と許可された送信テストの準備が整ってから本番へデプロイ・有効化する。
+既存注文の自動再処理・再送は行わない。
+
+Cloudflare公式手順: https://developers.cloudflare.com/workers/configuration/secrets/

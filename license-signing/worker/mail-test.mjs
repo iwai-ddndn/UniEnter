@@ -7,7 +7,7 @@ const hmac = await crypto.subtle.importKey('raw',secret,{name:'HMAC',hash:'SHA-2
 let tests=0
 function env(enabled='true') {
  const store=new Map()
- return {LICENSE_EMAIL_ENABLED:enabled, RESEND_API_KEY:'dummy', MAIL_FROM:'UniEnter <license@example.com>',LICENSE_PRIVATE_KEY:Buffer.from(jwk.d,'base64url').toString('base64'),LICENSE_PUBLIC_KEY:Buffer.from(jwk.x,'base64url').toString('base64'),POLAR_WEBHOOK_SECRET:'whsec_'+Buffer.from(secret).toString('base64'),POLAR_API_BASE:'https://polar.example',LICENSES:{store,async get(k,t){const v=store.get(k);return v===undefined?null:t==='json'?JSON.parse(v):v},async put(k,v){store.set(k,v)}}}
+ return {LICENSE_EMAIL_ENABLED:enabled, RESEND_API_KEY:'dummy', MAIL_FROM:'UniEnter <licenses@notify.oc-to.com>',MAIL_REPLY_TO:'info@oc-to.com',LICENSE_PRIVATE_KEY:Buffer.from(jwk.d,'base64url').toString('base64'),LICENSE_PUBLIC_KEY:Buffer.from(jwk.x,'base64url').toString('base64'),POLAR_WEBHOOK_SECRET:'whsec_'+Buffer.from(secret).toString('base64'),POLAR_API_BASE:'https://polar.example',LICENSES:{store,async get(k,t){const v=store.get(k);return v===undefined?null:t==='json'?JSON.parse(v):v},async put(k,v){store.set(k,v)}}}
 }
 async function webhook(e) {
  const body=JSON.stringify({type:'order.paid',data:{id:'order-test',checkout_id:'checkout-test',customer:{email:'buyer@example.com'}}})
@@ -28,7 +28,7 @@ function pass(name){tests++;console.log('PASS:',name)}
 {
  const e=env();mock();assert.equal((await webhook(e)).status,200);const r=await record(e)
  assert.equal(calls.length,1);assert.equal(r.mail.status,'accepted');assert.equal(r.mail.id,'mail-test')
- assert.deepEqual(calls[0].body.to,['buyer@example.com']);assert.ok(calls[0].body.text.includes(r.key));assert.ok(calls[0].body.text.includes('ライセンス'));assert.equal(calls[0].headers['Idempotency-Key'],'unienter-license/order-test')
+ assert.equal(calls[0].body.from,'UniEnter <licenses@notify.oc-to.com>');assert.equal(calls[0].body.reply_to,'info@oc-to.com');assert.deepEqual(calls[0].body.to,['buyer@example.com']);assert.ok(calls[0].body.text.includes(r.key));assert.ok(calls[0].body.text.includes('ライセンス'));assert.equal(calls[0].headers['Idempotency-Key'],'unienter-license/order-test')
  assert.deepEqual(await e.LICENSES.get('checkout:checkout-test','json'),r)
  assert.equal((await webhook(e)).status,200);assert.equal(calls.length,1);assert.equal((await record(e)).key,r.key);pass('success: key+instructions, accepted ID, duplicate webhook does not resend')
 }
@@ -57,5 +57,8 @@ for(const status of [403,429,500]) {
 }
 {
  const e=env();mock(()=>new Response('',{status:500}));await webhook(e);e.LICENSE_EMAIL_ENABLED='false';mock();assert.equal((await webhook(e)).status,200);assert.equal(calls.length,0);pass('explicit disable stops pending sends')
+}
+{
+ const e=env();delete e.MAIL_REPLY_TO;mock();assert.equal((await webhook(e)).status,503);assert.equal(calls.length,0);assert.equal((await record(e)).mail.status,'pending');pass('missing Reply-To keeps mail pending without sending')
 }
 console.log(`${tests} scenarios passed; random test keys and mocked fetch only`)
