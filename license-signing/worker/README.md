@@ -67,7 +67,9 @@ wrangler deploy
 
 ## 購入キーのメール通知(本番有効化前の準備)
 
-`LICENSE_EMAIL_ENABLED` は既定で `"false"`。コードのデプロイだけでは送信を始めない。
+2026-10-06に受信確認後、有効化。`LICENSE_EMAIL_ENABLED = "true"`。
+`LICENSE_EMAIL_START_AT = "2026-10-06T06:33:09Z"` 以降に作成された新規注文のみ対象。
+停止するときは `LICENSE_EMAIL_ENABLED = "false"` にしてデプロイする。
 送信先は **UniEnter購入時のメールアドレス**、件名は「UniEnter ライセンスキーのお届け」。
 内容は既に発行した購入キー、アプリへの入力手順、利用範囲、サポート連絡先。
 
@@ -116,3 +118,11 @@ Variables and Secrets → Deploy は直ちにデプロイするため、今回�
 既存注文の自動再処理・再送は行わない。
 
 Cloudflare公式手順: https://developers.cloudflare.com/workers/configuration/secrets/
+
+
+### 有効化時の過去注文保護
+
+既存レコードに `mail.status=pending` がなければ送信しないことに加え、署名検証済み
+`order.paid` の `data.created_at` と `LICENSE_EMAIL_START_AT` を比較する。
+開始時刻より前、または注文日時が不明な場合はメールを送らない(キー発行は維持)。
+開始時刻設定が欠けていれば送信せず503を返す。既存注文の列挙・再処理は行わない。

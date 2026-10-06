@@ -18,6 +18,7 @@
 //   POLAR_API_BASE         https://api.polar.sh(sandboxは https://sandbox-api.polar.sh)
 //   LICENSE_PUBLIC_KEY     公開鍵base64(LicenseManager.publicKeyBase64と同値)
 //   LICENSE_EMAIL_ENABLED  明示的に "true" にした場合のみ新規発行分を送信対象にする
+//   LICENSE_EMAIL_START_AT ISO時刻。これより前に作成された注文は送らない
 //   MAIL_FROM              メール送信元(例: "UniEnter <licenses@notify.oc-to.com>")
 //   MAIL_REPLY_TO          購入者からの返信先(info@oc-to.com)
 // KV: LICENSES(キーは order:<order_id> と checkout:<checkout_id> の2本立てで同じレコードを保存)
@@ -142,9 +143,14 @@ function newRecord(env, email, key) {
   }
 }
 
-async function sendLicenseMail(env, record, orderId) {
+async function sendLicenseMail(env, record, orderId, orderCreatedAt) {
   // 過去レコードを有効化と同時に一斉送信しない。新規発行時に予約したものだけ送る。
   if (env.LICENSE_EMAIL_ENABLED !== "true" || record.mail?.status !== "pending") return null
+  const startAt = Date.parse(env.LICENSE_EMAIL_START_AT)
+  if (!Number.isFinite(startAt)) throw new Error("mail activation cutoff missing")
+  const createdAt = Date.parse(orderCreatedAt)
+  // 過去注文の遅延Webhookや日時不明の注文も自動送信しない。
+  if (!Number.isFinite(createdAt) || createdAt < startAt) return null
   if (!env.RESEND_API_KEY || !env.MAIL_FROM || !env.MAIL_REPLY_TO) throw new Error("mail configuration missing")
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -306,7 +312,7 @@ export default {
         }
       }
       try {
-        const mail = await sendLicenseMail(env, record, orderId)
+        const mail = await sendLicenseMail(env, record, orderId, order.created_at)
         if (mail) {
           record = { ...record, mail }
           await env.LICENSES.put(`order:${orderId}`, JSON.stringify(record))

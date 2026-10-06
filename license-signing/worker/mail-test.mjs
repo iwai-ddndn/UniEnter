@@ -7,10 +7,10 @@ const hmac = await crypto.subtle.importKey('raw',secret,{name:'HMAC',hash:'SHA-2
 let tests=0
 function env(enabled='true') {
  const store=new Map()
- return {LICENSE_EMAIL_ENABLED:enabled, RESEND_API_KEY:'dummy', MAIL_FROM:'UniEnter <licenses@notify.oc-to.com>',MAIL_REPLY_TO:'info@oc-to.com',LICENSE_PRIVATE_KEY:Buffer.from(jwk.d,'base64url').toString('base64'),LICENSE_PUBLIC_KEY:Buffer.from(jwk.x,'base64url').toString('base64'),POLAR_WEBHOOK_SECRET:'whsec_'+Buffer.from(secret).toString('base64'),POLAR_API_BASE:'https://polar.example',LICENSES:{store,async get(k,t){const v=store.get(k);return v===undefined?null:t==='json'?JSON.parse(v):v},async put(k,v){store.set(k,v)}}}
+ return {LICENSE_EMAIL_ENABLED:enabled, LICENSE_EMAIL_START_AT:'2026-01-01T00:00:00Z', RESEND_API_KEY:'dummy', MAIL_FROM:'UniEnter <licenses@notify.oc-to.com>',MAIL_REPLY_TO:'info@oc-to.com',LICENSE_PRIVATE_KEY:Buffer.from(jwk.d,'base64url').toString('base64'),LICENSE_PUBLIC_KEY:Buffer.from(jwk.x,'base64url').toString('base64'),POLAR_WEBHOOK_SECRET:'whsec_'+Buffer.from(secret).toString('base64'),POLAR_API_BASE:'https://polar.example',LICENSES:{store,async get(k,t){const v=store.get(k);return v===undefined?null:t==='json'?JSON.parse(v):v},async put(k,v){store.set(k,v)}}}
 }
-async function webhook(e) {
- const body=JSON.stringify({type:'order.paid',data:{id:'order-test',checkout_id:'checkout-test',customer:{email:'buyer@example.com'}}})
+async function webhook(e, createdAt=new Date().toISOString()) {
+ const body=JSON.stringify({type:'order.paid',data:{created_at:createdAt,id:'order-test',checkout_id:'checkout-test',customer:{email:'buyer@example.com'}}})
  const timestamp=Math.floor(Date.now()/1000).toString(),id='event-test'
  const sig=Buffer.from(await crypto.subtle.sign('HMAC',hmac,new TextEncoder().encode(`${id}.${timestamp}.${body}`))).toString('base64')
  return worker.fetch(new Request('https://worker.example/polar/webhook',{method:'POST',body,headers:{'webhook-id':id,'webhook-timestamp':timestamp,'webhook-signature':'v1,'+sig}}),e)
@@ -60,5 +60,14 @@ for(const status of [403,429,500]) {
 }
 {
  const e=env();delete e.MAIL_REPLY_TO;mock();assert.equal((await webhook(e)).status,503);assert.equal(calls.length,0);assert.equal((await record(e)).mail.status,'pending');pass('missing Reply-To keeps mail pending without sending')
+}
+for (const createdAt of ['2025-12-31T23:59:59Z', null, 'invalid']) {
+ const e=env();mock();assert.equal((await webhook(e,createdAt)).status,200);assert.equal(calls.length,0);assert.ok((await record(e)).key);pass('old or unknown order date: no email, license still issued')
+}
+{
+ const e=env();mock();assert.equal((await webhook(e,e.LICENSE_EMAIL_START_AT)).status,200);assert.equal(calls.length,1);pass('cutoff boundary permits a new order')
+}
+{
+ const e=env();delete e.LICENSE_EMAIL_START_AT;mock();assert.equal((await webhook(e)).status,503);assert.equal(calls.length,0);pass('missing cutoff fails closed without sending')
 }
 console.log(`${tests} scenarios passed; random test keys and mocked fetch only`)
