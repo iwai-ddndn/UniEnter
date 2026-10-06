@@ -789,7 +789,7 @@ function Hero() {
           <span className="block">
             <SplitText text="うっかり送信を" base={400} />
             <br className="sm:hidden" />
-            <SplitText text="防ぎます" base={700} />
+            <SplitText text="防ぐ" base={700} />
           </span>
         </h1>
         <Reveal delay={900}>
@@ -1757,7 +1757,7 @@ function FinalCTA() {
           <h2 className="text-3xl leading-tight font-extrabold tracking-tight sm:text-6xl sm:leading-tight">
             Enterでの
             <br className="sm:hidden" />
-            うっかり送信を防ぎます
+            うっかり送信を防ぐ
           </h2>
         </Reveal>
         <Reveal delay={200}>

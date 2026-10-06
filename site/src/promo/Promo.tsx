@@ -337,7 +337,7 @@ export function Frame({ t, fmt }: { t: number; fmt: Fmt }) {
         <p className="mt-3 text-center font-bold" style={{ ...appear(t, 9.3, 0.5), fontSize: story ? 26 : 22, color: "var(--ink-2)" }}>
           Enterでの
           {story && <br />}
-          うっかり送信を防ぎます
+          うっかり送信を防ぐ
         </p>
         <p className="mt-4 text-[14px] font-semibold" style={{ ...appear(t, 9.7, 0.5), color: "var(--ink-3)" }}>
           Mac用 メニューバーアプリ

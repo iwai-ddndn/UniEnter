@@ -197,7 +197,7 @@ function Asset({ name }: { name: string }) {
         <Frame w={w} h={h}>
           <div className="absolute inset-y-0 right-10 flex items-center gap-9" style={{ paddingBottom: 24 }}>
             <div>
-              <H size={26}>Enterでのうっかり送信を防ぎます</H>
+              <H size={26}>Enterでのうっかり送信を防ぐ</H>
               <div className="mt-2">
                 <Sub size={13}>チャットアプリ/AIアプリで、Enterは改行・送信は⌘Enterに統一(Mac)</Sub>
               </div>
@@ -218,7 +218,7 @@ function Asset({ name }: { name: string }) {
                   <br />
                   うっかり送信を
                   <br />
-                  防ぎます
+                  防ぐ
                 </H>
               </div>
               <div className="mt-4">
@@ -407,7 +407,7 @@ function Asset({ name }: { name: string }) {
             <Mark size={84} />
             <p className="mt-5 text-[42px] font-extrabold tracking-tight">UniEnter</p>
             <div className="mt-2">
-              <Sub size={17}>Enterでのうっかり送信を防ぎます</Sub>
+              <Sub size={17}>Enterでのうっかり送信を防ぐ</Sub>
             </div>
             <div className="mt-7 flex gap-2">
               {["14日間無料", "買い切り ¥1,480", "macOS 13以降"].map((x) => (
@@ -436,7 +436,7 @@ function Asset({ name }: { name: string }) {
                 <br />
                 うっかり送信を
                 <br />
-                防ぎます
+                防ぐ
               </H>
             </div>
             <div className="mt-5">
