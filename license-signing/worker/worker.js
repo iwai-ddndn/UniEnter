@@ -2,7 +2,7 @@
 //
 // エンドポイント:
 //   POST /polar/webhook           Polarの order.paid を受けてキーを発行しKVへ保存
-//                                 (RESEND_API_KEY 設定時は購入者へメール送信)
+//                                 (LICENSE_EMAIL_ENABLED=true の新規発行分のみメール送信)
 //   GET  /license?checkout_id=ID  チェックアウト完了ページ向け。キーを表示。
 //                                 ?order=ID でも同様に引ける(エイリアス)。
 //                                 未発行かつWebhook未着の場合は自動更新ページを返し、
@@ -13,10 +13,11 @@
 //   POLAR_WEBHOOK_SECRET   Polar Webhookエンドポイント作成時に発行される secret(whsec_...)
 //   POLAR_ACCESS_TOKEN     Polar Organization access token(customers/checkouts読み取り、任意)
 //   LICENSE_PRIVATE_KEY    keys.txt の PRIVATE: 行のbase64(Ed25519シード32byte)
-//   RESEND_API_KEY         任意。設定するとメール送信も行う
+//   RESEND_API_KEY         メール送信を有効にするときに必要
 // 変数(wrangler.toml [vars]):
 //   POLAR_API_BASE         https://api.polar.sh(sandboxは https://sandbox-api.polar.sh)
 //   LICENSE_PUBLIC_KEY     公開鍵base64(LicenseManager.publicKeyBase64と同値)
+//   LICENSE_EMAIL_ENABLED  明示的に "true" にした場合のみ新規発行分を送信対象にする
 //   MAIL_FROM              メール送信元(例: "UniEnter <license@oc-to.com>")
 // KV: LICENSES(キーは order:<order_id> と checkout:<checkout_id> の2本立てで同じレコードを保存)
 
@@ -133,24 +134,34 @@ async function customerEmail(env, customerId) {
   return customer.email
 }
 
-async function sendLicenseMail(env, email, licenseKey) {
-  if (!env.RESEND_API_KEY || !env.MAIL_FROM) return
-  await fetch("https://api.resend.com/emails", {
+function newRecord(env, email, key) {
+  return {
+    email, key, issuedAt: new Date().toISOString(),
+    ...(env.LICENSE_EMAIL_ENABLED === "true" ? { mail: { status: "pending" } } : {}),
+  }
+}
+
+async function sendLicenseMail(env, record, orderId) {
+  // 過去レコードを有効化と同時に一斉送信しない。新規発行時に予約したものだけ送る。
+  if (env.LICENSE_EMAIL_ENABLED !== "true" || record.mail?.status !== "pending") return null
+  if (!env.RESEND_API_KEY || !env.MAIL_FROM) throw new Error("mail configuration missing")
+  const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Idempotency-Key": `unienter-license/${orderId}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       from: env.MAIL_FROM,
-      to: [email],
+      to: [record.email],
       subject: "UniEnter ライセンスキーのお届け",
       text: [
         "UniEnterをご購入いただきありがとうございます。",
         "",
         "以下があなたのライセンスキーです:",
         "",
-        licenseKey,
+        record.key,
         "",
         "メニューバーのUniEnter → ライセンス からキーを貼り付けて有効化してください。",
         "同一ユーザーのMacであれば複数台でご利用いただけます。",
@@ -160,6 +171,11 @@ async function sendLicenseMail(env, email, licenseKey) {
       ].join("\n"),
     }),
   })
+  // APIの受理と実際の受信箱への配達は区別する。本文(キー等)はログに出さない。
+  if (!res.ok) throw new Error(`mail API status ${res.status}`)
+  const accepted = await res.json()
+  if (typeof accepted.id !== "string" || !accepted.id) throw new Error("mail API missing id")
+  return { status: "accepted", id: accepted.id, acceptedAt: new Date().toISOString() }
 }
 
 // KVからレコードを引く。checkout_id優先、無ければorder_idとしても引く(?order=エイリアス対応)
@@ -185,7 +201,7 @@ async function tryIssueFromCheckout(env, checkoutId) {
   if (!email) return null
 
   const licenseKey = await issueLicenseKey(env, email)
-  const record = { email, key: licenseKey, issuedAt: new Date().toISOString() }
+  const record = newRecord(env, email, licenseKey)
   await env.LICENSES.put(`checkout:${checkoutId}`, JSON.stringify(record))
   if (checkout.order_id) {
     await env.LICENSES.put(`order:${checkout.order_id}`, JSON.stringify(record))
@@ -269,26 +285,37 @@ export default {
 
       const order = event.data
       const orderId = order.id
-      const existing = await env.LICENSES.get(`order:${orderId}`)
-      if (!existing) {
-        let email = order.customer?.email ?? null
-        if (!email && order.customer_id && env.POLAR_ACCESS_TOKEN) {
-          email = await customerEmail(env, order.customer_id)
+      let record = await env.LICENSES.get(`order:${orderId}`, "json")
+      if (!record) {
+        // 完了ページで先行発行されていた場合も、同じキーをメールに使う。
+        record = order.checkout_id
+          ? await env.LICENSES.get(`checkout:${order.checkout_id}`, "json") : null
+        if (!record) {
+          let email = order.customer?.email ?? null
+          if (!email && order.customer_id && env.POLAR_ACCESS_TOKEN) {
+            email = await customerEmail(env, order.customer_id)
+          }
+          if (!email) return new Response("email unresolved", { status: 500 })
+          record = newRecord(env, email, await issueLicenseKey(env, email))
         }
-        if (!email) {
-          // メールが取れない場合は発行できない。Polarの再送(最大10回)に賭けて非200を返す
-          return new Response("email unresolved", { status: 500 })
-        }
-
-        const licenseKey = await issueLicenseKey(env, email)
-        const record = { email, key: licenseKey, issuedAt: new Date().toISOString() }
         await env.LICENSES.put(`order:${orderId}`, JSON.stringify(record))
         if (order.checkout_id) {
           await env.LICENSES.put(`checkout:${order.checkout_id}`, JSON.stringify(record))
         }
-        await sendLicenseMail(env, email, licenseKey)
       }
-      // 既発行(リトライ配送)でも200を返して冪等に扱う
+      try {
+        const mail = await sendLicenseMail(env, record, orderId)
+        if (mail) {
+          record = { ...record, mail }
+          await env.LICENSES.put(`order:${orderId}`, JSON.stringify(record))
+          if (order.checkout_id) {
+            await env.LICENSES.put(`checkout:${order.checkout_id}`, JSON.stringify(record))
+          }
+        }
+      } catch {
+        // キーは保存済み。Polarのリトライで同じキーと冪等キーを使って再試行する。
+        return new Response("license email pending", { status: 503 })
+      }
       return new Response("ok")
     }
 

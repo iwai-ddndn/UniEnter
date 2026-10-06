@@ -8,6 +8,8 @@ binding = "LICENSES"
 id = "ccddd38e76424e3abd597ff6fc2e5ee8"
 
 [vars]
+# 本番有効化は送信元の検証と送信範囲の承認後に行う。既存注文は自動再送しない。
+LICENSE_EMAIL_ENABLED = "false"
 # 本番: https://api.polar.sh / サンドボックス: https://sandbox-api.polar.sh
 POLAR_API_BASE = "https://api.polar.sh"
 # LicenseManager.publicKeyBase64 と同値(公開情報)

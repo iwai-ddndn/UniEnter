@@ -1,5 +1,5 @@
 // worker.js の fetch ハンドラを直接呼び出すローカルテスト(Cloudflareにデプロイせず検証)
-// 実行: node webhook-test.mjs(要Node 20+、../keys.txt が必要)
+// 実行: node webhook-test.mjs(要Node 20+。使い捨て鍵、外部通信なし)
 //
 // 検証内容:
 //   1. 正しいStandard Webhooks署名の order.paid → 200、UNIENTER-形式のキーが
@@ -7,16 +7,14 @@
 //   2. 改ざんされたボディ → 401
 //   3. 同一Webhookの再送(重複配信) → 200 だが再発行されない(冪等)
 //   4. GET /license?checkout_id=... でキーが表示される
-import { readFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
 import assert from "node:assert/strict"
 import worker from "./worker.js"
 
-const here = dirname(fileURLToPath(import.meta.url))
-const keysTxt = readFileSync(join(here, "..", "keys.txt"), "utf8")
-const privateB64 = keysTxt.split("\n").find((l) => l.startsWith("PRIVATE:")).slice("PRIVATE:".length).trim()
-const PUBLIC_KEY_B64 = "GnuD4CdMgZHXooBnItp7HxOZUQD7Ai/fURl0oqidhXk=" // LicenseManager.publicKeyBase64
+const pair = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"])
+const jwk = await crypto.subtle.exportKey("jwk", pair.privateKey)
+const privateB64 = Buffer.from(jwk.d, "base64url").toString("base64")
+const PUBLIC_KEY_B64 = Buffer.from(jwk.x, "base64url").toString("base64")
+globalThis.fetch = async () => { throw new Error("Unexpected external request") }
 
 // --- KVスタブ(インメモリ) ---
 function createKvStub() {
