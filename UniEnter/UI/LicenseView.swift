@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 購入ページ(Polarのチェックアウトリンク。LPの「購入する」と同じ)。
 /// 購入後はライセンスキーの表示ページ(license-signing/worker)に移動する
-let purchaseURL = URL(string: "https://buy.polar.sh/polar_cl_zdFJOA7iIWaUzPThWsIjQKyRW0pImM8vfTuhn1sIQLk")!
+let purchaseURL = URL(string: "https://buy.polar.sh/polar_cl_zdFJOA7iIWaUzPThWsIjQKyRW0pImM8vfTuhn1sIQLk?locale=ja")!
 /// 購入の受付中か。false の間は「購入」ボタンを出さず、準備中であることを伝える
 /// (2026-09-29 に受付開始)
 let purchaseOpen = true

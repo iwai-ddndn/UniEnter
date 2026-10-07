@@ -66,6 +66,32 @@ enum WebAppMatcher {
         }
     }
 
+    /// Follow only the focused element's parent chain, never sibling web areas.
+    /// Generic so real observed AX structures can be replayed without UI permission.
+    static func nearestFocusedWebArea<Node>(from start: Node,
+                                            role: (Node) -> String?,
+                                            parent: (Node) -> Node?) -> Node? {
+        var current = start
+        for _ in 0..<25 {
+            if role(current) == "AXWebArea" { return current }
+            guard let next = parent(current) else { return nil }
+            current = next
+        }
+        return nil
+    }
+
+    /// サイドパネル向け: フォーカスされた複数行入力と、その最も近い
+    /// WebAreaのHTTPS originが確認できる時だけGeminiを対象にする。
+    /// ウィンドウ名・表示文字列・別タブのURLからは推測しない。
+    static func focusedGeminiService(role: String?, subrole: String?, documentURL: URL?) -> String? {
+        guard role == "AXTextArea", subrole != "AXSecureTextField",
+              let url = documentURL, url.scheme?.lowercased() == "https",
+              url.host?.lowercased() == "gemini.google.com",
+              url.user == nil, url.password == nil,
+              url.port == nil || url.port == 443 else { return nil }
+        return "web.gemini.google.com"
+    }
+
     /// アドレスバー(omnibox)の文字列をURLへ正規化する。
     /// Chromeはスキームを省略して表示するため https:// を補完する。
     /// 検索語などURLでないものはnil(=判定不能として書き換えない側に倒す)。
@@ -75,5 +101,49 @@ enum WebAppMatcher {
         let withScheme = trimmed.contains("://") ? trimmed : "https://" + trimmed
         guard let url = URL(string: withScheme), let host = url.host, host.contains(".") else { return nil }
         return url
+    }
+}
+
+/// Only fixed classifications are exportable. No page-controlled strings survive.
+enum BrowserDiagnosticMetadata {
+    static func line(role: String?, subrole: String?, url: URL?, focusedWindow: Bool) -> String {
+        let roles: Set<String> = ["AXTextArea", "AXTextField", "AXSecureTextField", "AXWebArea",
+            "AXGroup", "AXWindow", "AXApplication", "AXScrollArea", "AXSplitGroup",
+            "AXToolbar", "AXButton", "AXSearchField", "AXComboBox"]
+        let safeRole = role.flatMap { roles.contains($0) ? $0 : nil } ?? "other"
+        let secure = role == "AXSecureTextField" || subrole == "AXSecureTextField"
+        var origin = "unavailable"
+        if !secure, let url {
+            origin = "other"
+            if url.scheme == "https", url.host == "gemini.google.com",
+               url.user == nil, url.password == nil, url.port == nil || url.port == 443 {
+                origin = "https://gemini.google.com"
+            } else if url.scheme == "chrome", url.host == "glic" {
+                origin = "chrome://glic"
+            }
+        }
+        return "role=\(safeRole) secure=\(secure) origin=\(origin) focusedWindow=\(focusedWindow)"
+    }
+}
+
+enum BrowserEvaluationReason: String {
+    case timedOut, secureInput, missingFocusedURL, focusedGemini, rejectedGeminiInput
+    case focusedWebService, otherFocusedWeb, browserTextInput, noWindow, noURL, tabService, otherTab
+}
+struct BrowserEvaluation {
+    let service: String?
+    let reason: BrowserEvaluationReason
+    var metadata: String { "reason=\(reason.rawValue) gemini=\(service == "web.gemini.google.com")" }
+}
+struct BrowserDiagnosticRuntimeState {
+    let tapRunning: Bool
+    let entitled: Bool
+    let geminiEnabled: Bool
+    let remapperEnabled: Bool
+    let targetActive: Bool
+    let japanese: Bool
+    let composing: Bool
+    var metadata: String {
+        "tapRunning=\(tapRunning) entitled=\(entitled) geminiEnabled=\(geminiEnabled) remapperEnabled=\(remapperEnabled) targetActive=\(targetActive) japanese=\(japanese) composing=\(composing)"
     }
 }

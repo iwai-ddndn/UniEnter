@@ -18,15 +18,25 @@ final class BrowserTabMonitor {
     var isEnabled = true {
         didSet {
             guard oldValue != isEnabled else { return }
-            if isEnabled { refresh() } else { publish(nil) }
+            if isEnabled { refresh() } else {
+                stopRefreshing()
+                publish(nil)
+            }
         }
     }
 
     private let axQueue = DispatchQueue(label: "dev.iwai.UniEnter.browser-ax", qos: .userInitiated)
     private var observers: [pid_t: AXObserver] = [:]
     private var frontBrowser: (pid: pid_t, kind: BrowserKind)?
-    private var generation = 0
-    private var pendingWork: DispatchWorkItem?
+    private var refreshPolicy = BrowserRefreshPolicy()
+    private var refreshTimer: Timer?
+    private var immediateRefreshScheduled = false
+    private var typingPending = false
+    private var pointerPending = false
+    private var passiveTrace = BrowserPassiveTrace()
+    private var diagnosticTimer: Timer?
+    private var diagnosticToken: UUID?
+    var onDiagnosticFinished: ((URL?) -> Void)?
 
     init() {
         // ビジーなブラウザへのAX問い合わせで長時間ブロックしないよう、
@@ -39,12 +49,16 @@ final class BrowserTabMonitor {
     func frontmostChanged(_ app: NSRunningApplication?) {
         if let app, let bundleID = app.bundleIdentifier,
            let kind = BrowserRegistry.browsers[bundleID] {
+            refreshPolicy.setActive(false, now: ProcessInfo.processInfo.systemUptime)
+            typingPending = false
+            pointerPending = false
             frontBrowser = (app.processIdentifier, kind)
+            passiveTrace.record(.activated, now: ProcessInfo.processInfo.systemUptime)
             attachObserver(pid: app.processIdentifier)
             refresh()
         } else {
             frontBrowser = nil
-            pendingWork?.cancel()
+            stopRefreshing()
             publish(nil)
         }
     }
@@ -55,32 +69,105 @@ final class BrowserTabMonitor {
         CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .defaultMode)
         if frontBrowser?.pid == pid {
             frontBrowser = nil
+            stopRefreshing()
             publish(nil)
         }
     }
 
     /// 現在の前面ブラウザを再評価する(AXObserver通知・設定変更などから)
     func refresh() {
-        guard isEnabled, let front = frontBrowser else { return }
-        pendingWork?.cancel()
-        generation += 1
-        let gen = generation
-        let work = DispatchWorkItem { [weak self] in
+        guard isEnabled, frontBrowser != nil else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        if !refreshPolicy.active { refreshPolicy.setActive(true, now: now) }
+        else { refreshPolicy.invalidate(now: now) }
+        passiveTrace.record(.invalidated, now: now, generation: refreshPolicy.generation)
+        publish(nil)
+        startRefreshTimer()
+        scheduleImmediateRefresh()
+    }
+
+    /// Coalesce notifications within this run-loop turn, not behind a 100ms timer.
+    /// Never called by the event-tap callbacks. AX remains asynchronous on axQueue.
+    private func scheduleImmediateRefresh() {
+        guard isEnabled, frontBrowser != nil, !immediateRefreshScheduled else { return }
+        immediateRefreshScheduled = true
+        DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            self.immediateRefreshScheduled = false
+            self.pumpRefresh()
+        }
+    }
+
+    /// Event-tap callers only set flags: no AX, dispatch, file I/O, UI, or logging.
+    func noteTypingActivity() { typingPending = true }
+    func notePointerActivity() -> Bool {
+        guard isEnabled, frontBrowser != nil else { return false }
+        pointerPending = true
+        return true
+    }
+
+    private func stopRefreshing() {
+        refreshPolicy.setActive(false, now: ProcessInfo.processInfo.systemUptime)
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+        typingPending = false
+        pointerPending = false
+        passiveTrace.record(.deactivated, now: ProcessInfo.processInfo.systemUptime)
+    }
+
+    private func startRefreshTimer() {
+        guard refreshTimer == nil else { return }
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in self?.pumpRefresh() }
+        refreshTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func pumpRefresh() {
+        guard isEnabled, let front = frontBrowser else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        if pointerPending {
+            pointerPending = false
+            refreshPolicy.invalidate(now: now, settleDelay: 0.08)
+            passiveTrace.record(.invalidated, now: now, generation: refreshPolicy.generation)
+            publish(nil)
+        }
+        if typingPending {
+            typingPending = false
+            passiveTrace.record(.typingOccurred, now: now, generation: refreshPolicy.generation,
+                                active: webServiceBundleID != nil)
+            refreshPolicy.activity(now: now)
+        }
+        guard let ticket = refreshPolicy.begin(now: now) else { return }
+        passiveTrace.record(.evaluationStarted, now: now, generation: ticket.generation)
+        axQueue.async { [weak self] in
+            // A wall-clock budget prevents walking large/unresponsive AX trees indefinitely.
+            // One already-running AX IPC may finish after the budget (OS timeout: 250ms).
+            Thread.current.threadDictionary[Self.budgetKey] = ProcessInfo.processInfo.systemUptime + 0.2
             let result = Self.evaluate(pid: front.pid, kind: front.kind)
+            let timedOut = ProcessInfo.processInfo.systemUptime >= (Thread.current.threadDictionary[Self.budgetKey] as? Double ?? 0)
+            Thread.current.threadDictionary.removeObject(forKey: Self.budgetKey)
+            let bounded = timedOut ? BrowserEvaluation(service: nil, reason: .timedOut) : result
             DispatchQueue.main.async {
-                guard self.generation == gen, self.frontBrowser?.pid == front.pid else { return }
-                self.publish(result)
+                guard let self else { return }
+                let completedAt = ProcessInfo.processInfo.systemUptime
+                let accepted = self.refreshPolicy.complete(ticket, now: completedAt)
+                    && self.isEnabled && self.frontBrowser?.pid == front.pid && !self.pointerPending
+                self.passiveTrace.record(.evaluationFinished, now: completedAt,
+                    generation: ticket.generation, active: bounded.service != nil,
+                    reason: bounded.reason, accepted: accepted)
+                if accepted { self.publish(bounded.service) }
+                // If a focus change arrived during AX work, re-evaluate the newest
+                // generation promptly; the budget still applies and workers never overlap.
+                self.scheduleImmediateRefresh()
             }
         }
-        pendingWork = work
-        // 通知は連発するため軽くまとめる
-        axQueue.asyncAfter(deadline: .now() + 0.08, execute: work)
     }
 
     private func publish(_ id: String?) {
         guard webServiceBundleID != id else { return }
         webServiceBundleID = id
+        passiveTrace.record(.cacheChanged, now: ProcessInfo.processInfo.systemUptime,
+                            generation: refreshPolicy.generation, active: id != nil)
         onChange?(id)
     }
 
@@ -89,9 +176,22 @@ final class BrowserTabMonitor {
     private func attachObserver(pid: pid_t) {
         guard observers[pid] == nil else { return }
         var observer: AXObserver?
-        let callback: AXObserverCallback = { _, _, _, refcon in
+        let callback: AXObserverCallback = { observer, _, notification, refcon in
             guard let refcon else { return }
             let monitor = Unmanaged<BrowserTabMonitor>.fromOpaque(refcon).takeUnretainedValue()
+            // Background browser notifications must not invalidate the front browser.
+            guard monitor.isEnabled, let front = monitor.frontBrowser,
+                  let expected = monitor.observers[front.pid], CFEqual(observer, expected) else { return }
+            let event: BrowserPassiveTrace.Event
+            switch notification as String {
+            case kAXFocusedUIElementChangedNotification: event = .focusNotification
+            case kAXTitleChangedNotification: event = .titleNotification
+            case kAXFocusedWindowChangedNotification: event = .focusedWindowNotification
+            case kAXMainWindowChangedNotification: event = .mainWindowNotification
+            default: event = .otherNotification
+            }
+            monitor.passiveTrace.record(event, now: ProcessInfo.processInfo.systemUptime)
+            // All context changes still invalidate immediately, including title changes.
             monitor.refresh()
         }
         guard AXObserverCreate(pid, callback, &observer) == .success, let observer else {
@@ -117,21 +217,34 @@ final class BrowserTabMonitor {
 
     private static let evalLog = Logger(subsystem: "dev.iwai.UniEnter", category: "browser-eval")
 
-    private static func evaluate(pid: pid_t, kind: BrowserKind) -> String? {
+    private static func evaluate(pid: pid_t, kind: BrowserKind) -> BrowserEvaluation {
         let app = AXUIElementCreateApplication(pid)
 
-        // アドレスバー等ブラウザUIのテキスト欄を編集中は無効にする
-        // (そこでのEnterはナビゲーション操作であり書き換えてはいけない)
-        if let focused = copyElement(app, kAXFocusedUIElementAttribute),
-           isBrowserChromeTextField(focused) {
-            evalLog.notice("eval pid=\(pid): address bar focused -> inactive")
-            return nil
+        if let focused = copyElement(app, kAXFocusedUIElementAttribute) {
+            if copyString(focused, kAXSubroleAttribute) == "AXSecureTextField" { return BrowserEvaluation(service: nil, reason: .secureInput) }
+            // サイドパネルはタブのアドレスバーとURLが違う。
+            // 最も近いWebAreaだけを見る。他の兄弟/背後のページは探さない。
+            if let document = focusedDocument(of: focused) {
+                guard let documentURL = copyURL(document, "AXURL") else { return BrowserEvaluation(service: nil, reason: .missingFocusedURL) }
+                if documentURL.host?.lowercased() == "gemini.google.com" {
+                    let service = WebAppMatcher.focusedGeminiService(
+                        role: role(of: focused),
+                        subrole: copyString(focused, kAXSubroleAttribute),
+                        documentURL: documentURL)
+                    return BrowserEvaluation(service: service, reason: service == nil ? .rejectedGeminiInput : .focusedGemini)
+                }
+                // 通常ページ/拡張機能/ログインページに戻ったら、背後の
+                // 対象タブにフォールバックしない。
+                let service = WebAppMatcher.serviceBundleID(for: documentURL)
+                return BrowserEvaluation(service: service, reason: service == nil ? .otherFocusedWeb : .focusedWebService)
+            }
+            if isBrowserChromeTextField(focused) { return BrowserEvaluation(service: nil, reason: .browserTextInput) }
         }
 
         guard let window = copyElement(app, kAXFocusedWindowAttribute)
                 ?? copyElement(app, kAXMainWindowAttribute) else {
             evalLog.notice("eval pid=\(pid): no focused/main window")
-            return nil
+            return BrowserEvaluation(service: nil, reason: .noWindow)
         }
 
         var url: URL?
@@ -155,11 +268,16 @@ final class BrowserTabMonitor {
         }
         guard let url else {
             evalLog.notice("eval pid=\(pid): url not found (kind=\(String(describing: kind), privacy: .public))")
-            return nil
+            return BrowserEvaluation(service: nil, reason: .noURL)
         }
         let service = WebAppMatcher.serviceBundleID(for: url, hostOnly: hostOnly)
-        evalLog.notice("eval pid=\(pid): url=\(url.host ?? "?", privacy: .public)\(url.path, privacy: .public) hostOnly=\(hostOnly) -> \(service ?? "no match", privacy: .public)")
-        return service
+        evalLog.notice("eval pid=\(pid): service=\(service ?? "no match", privacy: .public)")
+        return BrowserEvaluation(service: service, reason: service == nil ? .otherTab : .tabService)
+    }
+
+    private static func focusedDocument(of element: AXUIElement) -> AXUIElement? {
+        WebAppMatcher.nearestFocusedWebArea(from: element, role: { role(of: $0) },
+            parent: { copyElement($0, kAXParentAttribute) })
     }
 
     /// Arc: ウィンドウ直下の浅い階層にある `commandBarPlaceholderTextField`
@@ -240,59 +358,46 @@ final class BrowserTabMonitor {
 
     // MARK: - 診断
 
-    /// 前面ブラウザのAXツリーをログへダンプする(メニューから手動実行する調査用)。
-    func dumpDiagnostics() {
-        guard let front = frontBrowser else {
-            Self.evalLog.notice("diag: no front browser")
-            return
+    /// Passive: observes normal scheduling only. Starting does not refresh or read AX.
+    @discardableResult
+    func startMetadataDiagnostics() -> Bool {
+        guard diagnosticToken == nil, AXIsProcessTrusted() else { return false }
+        diagnosticToken = UUID()
+        passiveTrace.start(now: ProcessInfo.processInfo.systemUptime, active: webServiceBundleID != nil)
+        let timer = Timer(timeInterval: BrowserPassiveTrace.duration, repeats: false) { [weak self] _ in
+            self?.finishMetadataDiagnostics()
         }
-        axQueue.async { Self.dumpTree(pid: front.pid) }
+        diagnosticTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+        return true
     }
 
-    private static func dumpTree(pid: pid_t) {
-        let app = AXUIElementCreateApplication(pid)
-        if let focused = copyElement(app, kAXFocusedUIElementAttribute) {
-            evalLog.notice("diag focused: \(describe(focused), privacy: .public)")
-        }
-        guard let window = copyElement(app, kAXFocusedWindowAttribute)
-                ?? copyElement(app, kAXMainWindowAttribute) else {
-            evalLog.notice("diag: no window")
-            return
-        }
-        var count = 0
-        func walk(_ element: AXUIElement, _ depth: Int) {
-            guard count < 300, depth < 9 else { return }
-            count += 1
-            let indent = String(repeating: "| ", count: depth)
-            evalLog.notice("diag \(indent, privacy: .public)\(describe(element), privacy: .public)")
-            for child in children(of: element) { walk(child, depth + 1) }
-        }
-        walk(window, 0)
-        evalLog.notice("diag: dumped \(count) nodes")
-    }
-
-    private static func describe(_ element: AXUIElement) -> String {
-        var parts: [String] = [role(of: element) ?? "?"]
-        if let sub = copyString(element, kAXSubroleAttribute) { parts.append("sub=\(sub)") }
-        if let id = copyString(element, "AXIdentifier") { parts.append("id=\(id)") }
-        if let title = copyString(element, kAXTitleAttribute), !title.isEmpty {
-            parts.append("title=\(String(title.prefix(40)))")
-        }
-        if let desc = copyString(element, kAXDescriptionAttribute), !desc.isEmpty {
-            parts.append("desc=\(String(desc.prefix(40)))")
-        }
-        if let value = copyString(element, kAXValueAttribute), !value.isEmpty {
-            parts.append("value=\(String(value.prefix(60)))")
-        }
-        if let url = copyURL(element, "AXURL") {
-            parts.append("url=\(String(url.absoluteString.prefix(60)))")
-        }
-        return parts.joined(separator: " ")
+    private func finishMetadataDiagnostics() {
+        diagnosticTimer?.invalidate()
+        diagnosticTimer = nil
+        diagnosticToken = nil
+        let lines = passiveTrace.finish(now: ProcessInfo.processInfo.systemUptime)
+        var output: URL?
+        do {
+            let directory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("UniEnter-Metadata-" + UUID().uuidString, isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
+                attributes: [.posixPermissions: 0o700])
+            let file = directory.appendingPathComponent("browser-passive.txt")
+            guard FileManager.default.createFile(atPath: file.path,
+                contents: Data(lines.joined(separator: "\n").utf8),
+                attributes: [.posixPermissions: 0o600]) else { throw CocoaError(.fileWriteUnknown) }
+            output = file
+        } catch { /* No raw error or captured content in system logs. */ }
+        onDiagnosticFinished?(output)
     }
 
     // MARK: - AXヘルパー
 
+    private static let budgetKey = "dev.iwai.UniEnter.ax-deadline"
     private static func copyValue(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {
+        if let deadline = Thread.current.threadDictionary[budgetKey] as? Double,
+           ProcessInfo.processInfo.systemUptime >= deadline { return nil }
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else {
             return nil
@@ -312,9 +417,10 @@ final class BrowserTabMonitor {
     }
 
     private static func copyURL(_ element: AXUIElement, _ attribute: String) -> URL? {
-        guard let value = copyValue(element, attribute),
-              CFGetTypeID(value) == CFURLGetTypeID() else { return nil }
-        return (value as! CFURL) as URL
+        guard let value = copyValue(element, attribute) else { return nil }
+        if CFGetTypeID(value) == CFURLGetTypeID() { return (value as! CFURL) as URL }
+        if let string = value as? String { return URL(string: string) }
+        return nil
     }
 
     private static func role(of element: AXUIElement) -> String? {

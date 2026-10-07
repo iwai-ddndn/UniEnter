@@ -1,14 +1,35 @@
 #!/bin/bash
-# pkgインストール完了後にUniEnterを起動する。
-# インストーラはroot権限で走るので、ログイン中のユーザーとして open する
-# (rootで起動するとアクセシビリティ許可やUserDefaultsが別ユーザー扱いになる)。
+# Installer runs as root. Launch once in the active user's GUI session, with
+# that user's credentials and HOME. Never change permissions or login items.
 APP="/Applications/UniEnter.app"
-CONSOLE_USER=$(/usr/bin/stat -f%Su /dev/console)
-CONSOLE_UID=$(/usr/bin/id -u "$CONSOLE_USER" 2>/dev/null)
-if [ -d "$APP" ] && [ -n "$CONSOLE_UID" ] && [ "$CONSOLE_USER" != "root" ]; then
-  # 旧バージョンが常駐中なら終了してから起動(更新インストールの場合)
-  /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/sudo -u "$CONSOLE_USER" /usr/bin/osascript -e 'tell application id "dev.iwai.UniEnter" to quit' >/dev/null 2>&1 || true
-  sleep 1
-  /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/sudo -u "$CONSOLE_USER" /usr/bin/open "$APP" || true
+log() { /bin/echo "UniEnter postinstall: $*"; }
+
+# $3 is Installer's target volume. Do not launch the host's app for another disk.
+if [ "${3:-}" != "/" ]; then
+  log "Skipping launch: target is not the startup volume."
+  exit 0
+fi
+[ -d "$APP" ] || exit 0
+CONSOLE_USER=$(/usr/bin/stat -f%Su /dev/console 2>/dev/null) || exit 0
+case "$CONSOLE_USER" in
+  ""|root|loginwindow|_*) exit 0 ;;
+esac
+CONSOLE_UID=$(/usr/bin/id -u "$CONSOLE_USER" 2>/dev/null) || exit 0
+case "$CONSOLE_UID" in ""|*[!0-9]*) exit 0 ;; esac
+[ "$CONSOLE_UID" -ge 501 ] || exit 0
+/bin/launchctl print "gui/$CONSOLE_UID" >/dev/null 2>&1 || exit 0
+
+# Updating must not interrupt an already running copy or create a second one.
+# The new version will be used on the user's next normal launch.
+if /usr/bin/pgrep -u "$CONSOLE_UID" -x UniEnter >/dev/null 2>&1; then
+  log "Already running; leaving the current session intact."
+  exit 0
+fi
+# No -n: LaunchServices also avoids duplicates if another launch races us.
+if /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/sudo -H -u "$CONSOLE_USER" /usr/bin/open "$APP"; then
+  log "Requested launch in the logged-in user's session."
+else
+  # A GUI/session failure must not turn a successful installation into failure.
+  log "Automatic launch unavailable; open UniEnter from Applications."
 fi
 exit 0

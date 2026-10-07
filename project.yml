@@ -29,8 +29,8 @@ targets:
         # 右クリックメニューなど、システム・ライブラリ側の文言が英語で表示される
         CFBundleDevelopmentRegion: ja
         CFBundleLocalizations: [ja]
-        CFBundleShortVersionString: "0.3.5"
-        CFBundleVersion: "8"
+        CFBundleShortVersionString: "0.3.6"
+        CFBundleVersion: "13"
         LSUIElement: true
         NSPrincipalClass: NSApplication
         NSHumanReadableCopyright: "© 2026 octo (oc-to.com)"

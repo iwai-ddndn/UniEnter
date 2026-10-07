@@ -10,7 +10,7 @@ Enterでのうっかり送信を防ぐ
 - **開発を支援**: https://unienter.oc-to.com/support.html
 - **利用規約 / プライバシーポリシー**: https://unienter.oc-to.com/terms.html / https://unienter.oc-to.com/privacy.html
 
-> 公証(notarization)準備中のため、初回のみ システム設定 → プライバシーとセキュリティ → 「このまま開く」から起動してください。
+> 配布版はDeveloper ID署名・Apple公証済みです。インストール後、案内に従ってアクセシビリティを許可してください。
 
 ## 対象アプリ
 

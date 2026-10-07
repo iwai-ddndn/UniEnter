@@ -66,6 +66,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var webServiceBundleID: String?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Explicit support modes never prompt for permission or touch user state.
+        if CommandLine.arguments.contains("--verify-existing-accessibility") {
+            let trusted = AXIsProcessTrusted()
+            print("existingAccessibilityTrusted=\(trusted)")
+            exit(trusted ? 0 : 2)
+        }
         #if DEBUG
         // --screenshot-mode 起動時は常駐処理を一切始めず、全画面を書き出して終了する
         if ScreenshotMode.runIfRequested() { return }
@@ -99,10 +105,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startTapWhenPermitted()
 
         refreshEntitlement()
+        // 許可済み・初期設定済みの通常起動にも目に見える入口を用意する。
+        if AXIsProcessTrusted(), settingsStore.hasSeenTutorial,
+           ![onboardingWindow, tutorialWindow, licenseWindow].contains(where: { $0?.isVisible == true }) {
+            openSettings()
+        }
         // 日付が変わってもトライアル残日数・期限切れが反映されるよう定期更新
         entitlementTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             self?.refreshEntitlement()
         }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !AXIsProcessTrusted() {
+            showOnboarding()
+            waitForPermission()
+        } else if !licenseManager.isEntitled {
+            openLicense()
+        } else if let tutorialWindow, tutorialWindow.isVisible {
+            showTutorial()
+        } else {
+            openSettings()
+        }
+        return false
     }
 
     private func refreshEntitlement() {
@@ -128,6 +153,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch type {
         case .leftMouseDown:
             engine.mouseDown()
+            // Stop using the old browser input immediately, without AX or UI work.
+            if browserMonitor.notePointerActivity() {
+                engine.targetAvailabilityChanged(isTarget: false)
+            }
             return event
         case .keyDown, .keyUp:
             let keycode = event.getIntegerValueField(.keyboardEventKeycode)
@@ -135,6 +164,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let action: RemapAction
             if type == .keyDown {
                 let isPhysical = event.getIntegerValueField(.eventSourceStateID) == 1
+                if isPhysical && RemapEngine.isTextInputActivity(keycode: keycode, mods: mods) {
+                    browserMonitor.noteTypingActivity()
+                }
                 let wasComposing = engine.isComposing
                 let wasSuggesting = engine.isSuggesting
                 action = engine.keyDown(
@@ -244,7 +276,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showOnboarding() {
-        guard onboardingWindow == nil else { return }
+        if let onboardingWindow {
+            onboardingWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
         let view = OnboardingView(
             openSystemSettings: {
                 let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
@@ -328,6 +364,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateFrontmost(_ app: NSRunningApplication?) {
         frontmostApp = app
+        engine.frontmostChanged(isTarget: false)
         log.notice("frontmost: \(app?.bundleIdentifier ?? "nil", privacy: .public)")
         browserMonitor.frontmostChanged(app)
         // 対象アプリが前面に来たタイミングで送信キー設定を読み直す(設定変更の追従)
@@ -355,10 +392,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 手動宣言と自動検出(SendKeyDetector)の和集合で判定するが、自動検出が「既定のまま
         // (Enter=送信)」と分かっているアプリは、古い/誤った手動宣言が残っていても素通しにしない。
         // (Web版はワークスペース/アカウントごとに設定が独立しているため対象外にしない)
-        let passthroughApps = cmdEnterSendApps.union(detectedCmdEnterSendApps)
-            .subtracting(detectedStandardApps)
+        let passthroughApps = AppRegistry.passthroughApps(declared: cmdEnterSendApps,
+            detectedCmdEnter: detectedCmdEnterSendApps, detectedStandard: detectedStandardApps)
         let nativeNeedsRemap = nativeID.map { !passthroughApps.contains($0) } ?? false
-        engine.frontmostChanged(isTarget: nativeNeedsRemap || webID != nil)
+        engine.targetAvailabilityChanged(isTarget: nativeNeedsRemap || webID != nil)
 
         if let id = nativeID {
             let name = AppRegistry.all.first { $0.bundleID == id }?.name ?? id
@@ -463,7 +500,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             updateItem.target = updaterController
             menu.addItem(updateItem)
         }
-        diagMenuItem = NSMenuItem(title: "ブラウザ判定を診断(ログ出力)", action: #selector(dumpBrowserDiagnostics), keyEquivalent: "")
+        diagMenuItem = NSMenuItem(title: "Chrome入力判定を記録（30秒・本文なし）", action: #selector(dumpBrowserDiagnostics), keyEquivalent: "")
         diagMenuItem.target = self
         diagMenuItem.isHidden = true
         menu.addItem(diagMenuItem)
@@ -546,7 +583,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func dumpBrowserDiagnostics() {
-        browserMonitor.dumpDiagnostics()
+        let prompt = NSAlert()
+        prompt.messageText = "通常の入力判定を30秒間記録します"
+        prompt.informativeText = "開始後にChromeの別ページからGeminiを開き、入力欄をクリックして短いダミー文字を一度入力してください。Enterは押さず、送信しないでください。通常処理の通知と判定、文字入力があった事実だけを記録します。文字・キーコード・タイトル・URLは保存せず、診断用の追加AX問い合わせも行いません。30秒後にこのMacへ保存します。"
+        prompt.addButton(withTitle: "開始")
+        prompt.addButton(withTitle: "キャンセル")
+        guard prompt.runModal() == .alertFirstButtonReturn else { return }
+        browserMonitor.onDiagnosticFinished = { file in
+            let result = NSAlert()
+            result.messageText = file == nil ? "診断結果を保存できませんでした" : "診断が終了しました"
+            result.informativeText = "自動送信はしていません。"
+            if file != nil { result.addButton(withTitle: "ファイルを表示") }
+            result.addButton(withTitle: "閉じる")
+            if result.runModal() == .alertFirstButtonReturn, let file {
+                NSWorkspace.shared.activateFileViewerSelecting([file])
+            }
+        }
+        if !browserMonitor.startMetadataDiagnostics() {
+            let result = NSAlert()
+            result.messageText = "診断を開始できません"
+            result.informativeText = "既存のアクセシビリティ許可が無効、または診断中です。権限設定は変更していません。"
+            result.runModal()
+        }
     }
 
     @objc private func toggleEnabled() {

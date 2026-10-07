@@ -425,3 +425,47 @@ final class RemapEngineSuggestionTests: XCTestCase {
         XCTAssertFalse(engine.isSuggesting)
     }
 }
+
+final class OviceNativeKeyTests: XCTestCase {
+    func testNativeOviceNeverLosesCommandOrRewritesEnter() {
+        let id = "com.ovice.desktop.prod"
+        let passthrough = AppRegistry.passthroughApps(declared: [], detectedCmdEnter: [], detectedStandard: [id])
+        XCTAssertTrue(passthrough.contains(id))
+        let engine = RemapEngine()
+        engine.isEnabled = true
+        engine.frontmostChanged(isTarget: !passthrough.contains(id))
+        for japanese in [false, true] {
+            engine.inputSourceChanged(isJapanese: japanese)
+            _ = engine.keyDown(keycode: 0, mods: [], isPhysical: true, characters: "a")
+            for physical in [false, true] {
+                for mods: RemapEngine.Modifiers in [[], [.command], [.shift], [.command, .shift], [.control], [.option]] {
+                    for key: Int64 in [36, 76] {
+                        XCTAssertEqual(engine.keyDown(keycode: key, mods: mods, isPhysical: physical), .passThrough)
+                        XCTAssertEqual(engine.keyUp(keycode: key, mods: mods), .passThrough)
+                    }
+                }
+            }
+        }
+    }
+    func testOtherAppsKeepExistingPrecedence() {
+        let slack = "com.tinyspeck.slackmacgap"
+        XCTAssertFalse(AppRegistry.passthroughApps(declared: [slack], detectedCmdEnter: [], detectedStandard: [slack]).contains(slack))
+        XCTAssertTrue(AppRegistry.passthroughApps(declared: [], detectedCmdEnter: [slack], detectedStandard: []).contains(slack))
+    }
+}
+
+final class GeminiRuntimePathTests: XCTestCase {
+    func testObservedChromeFailureAndFreshTargetAreDifferent() {
+        // Actual failed key metadata: physical=true, target=false, ja=true,
+        // composing=false, suggesting=false, no modifiers. No event is posted.
+        let engine = RemapEngine()
+        engine.isEnabled = true
+        engine.inputSourceChanged(isJapanese: true)
+        engine.frontmostChanged(isTarget: false)
+        XCTAssertEqual(engine.keyDown(keycode:36,mods:[],isPhysical:true),.passThrough)
+        XCTAssertEqual(engine.keyUp(keycode:36,mods:[]),.passThrough)
+        engine.frontmostChanged(isTarget:true)
+        XCTAssertEqual(engine.keyDown(keycode:36,mods:[],isPhysical:true),.addShift)
+        XCTAssertEqual(engine.keyUp(keycode:36,mods:[]),.addShift)
+    }
+}

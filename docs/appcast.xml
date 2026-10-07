@@ -10,6 +10,20 @@
     <language>ja</language>
 <!-- items -->
     <item>
+      <title>UniEnter 0.3.6</title>
+      <pubDate>Wed, 07 Oct 2026 07:32:18 GMT</pubDate>
+      <sparkle:version>13</sparkle:version>
+      <sparkle:shortVersionString>0.3.6</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h3>UniEnter 0.3.6</h3>
+<p>ChromeのGemini入力欄の判定と、通知が欠けた場合の再確認を改善しました。入力先の再評価で日本語変換状態が失われないようにし、起動時の画面表示とインストール後の起動処理も調整しています。</p>
+<p>診断結果はMac内だけに保存し、自動送信しません。詳しい変更内容と確認範囲はGitHubのリリースノートをご覧ください。</p>
+]]></description>
+      <enclosure url="https://github.com/iwai-ddndn/UniEnter/releases/download/v0.3.6/UniEnter.zip" type="application/octet-stream" sparkle:edSignature="jw3/o8yvrbxlkA1Y7nlw92UoI35AKdFoIMa6kdPXCpgwy8WLfV+fhoqBzbxXcsP5A4+5x/n1Hy2kZK5Pa7UAAQ==" length="1720030" />
+    </item>
+
+    <item>
       <title>UniEnter 0.3.5</title>
       <pubDate>Tue, 06 Oct 2026 00:17:45 +0000</pubDate>
       <sparkle:version>8</sparkle:version>

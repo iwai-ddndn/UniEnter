@@ -32,7 +32,7 @@ echo "== ビルド($APP_IDENTITY)"
 xcodegen generate -q
 xcodebuild -project UniEnter.xcodeproj -scheme UniEnter -configuration Release \
   -destination 'generic/platform=macOS' \
-  -derivedDataPath build DEVELOPMENT_TEAM="$TEAM_ID" build | grep -E "(error:|\*\* BUILD)" || true
+  -derivedDataPath build DEVELOPMENT_TEAM="$TEAM_ID" build
 test -d "$APP"
 
 # Sparkle 内の補助プログラム(Autoupdate・Updater・XPC)は Xcode の build では Developer ID で

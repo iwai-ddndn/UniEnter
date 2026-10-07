@@ -160,3 +160,142 @@ final class WebAppMatcherTests: XCTestCase {
         XCTAssertEqual(WebAppMatcher.serviceBundleID(for: url), "com.hnc.Discord")
     }
 }
+
+final class FocusedGeminiTests: XCTestCase {
+    func testOnlyVerifiedGeminiMultilineInputMatches() {
+        XCTAssertEqual(WebAppMatcher.focusedGeminiService(role: "AXTextArea", subrole: nil,
+            documentURL: URL(string: "https://gemini.google.com/app")), "web.gemini.google.com")
+        for raw in ["https://youtube.com/watch", "https://example.com/?gemini.google.com",
+                    "https://gemini.google.com.evil.invalid/app", "http://gemini.google.com/app",
+                    "chrome-extension://gemini.google.com/app", "https://accounts.google.com/",
+                    "https://gemini.google.com:1234/app", "https://user@gemini.google.com/app"] {
+            XCTAssertNil(WebAppMatcher.focusedGeminiService(role: "AXTextArea", subrole: nil,
+                documentURL: URL(string: raw)), raw)
+        }
+    }
+    func testUnverifiedFocusAndPasswordNeverMatch() {
+        let url = URL(string: "https://gemini.google.com/app")
+        for role in ["AXTextField", "AXSearchField", "AXButton", "AXWebArea", "AXGroup"] {
+            XCTAssertNil(WebAppMatcher.focusedGeminiService(role: role, subrole: nil, documentURL: url))
+        }
+        XCTAssertNil(WebAppMatcher.focusedGeminiService(role: "AXTextArea", subrole: "AXSecureTextField", documentURL: url))
+        XCTAssertNil(WebAppMatcher.focusedGeminiService(role: "AXTextArea", subrole: nil, documentURL: nil))
+    }
+}
+
+final class BrowserDiagnosticPrivacyTests: XCTestCase {
+    func testOnlyFixedMetadataCanBeExported() {
+        let secret = "PRIVATE_CHAT_PASSWORD_LICENSE"
+        for raw in ["https://gemini.google.com/\(secret)?token=\(secret)#\(secret)",
+                    "https://\(secret)@example.invalid/\(secret)",
+                    "chrome://glic/\(secret)?token=\(secret)",
+                    "https://\(secret).example.invalid/"] {
+            let line = BrowserDiagnosticMetadata.line(role: secret, subrole: secret,
+                url: URL(string: raw), focusedWindow: true)
+            XCTAssertFalse(line.contains(secret))
+            XCTAssertFalse(line.contains("example.invalid"))
+            XCTAssertTrue(line.contains("role=other"))
+        }
+    }
+    func testSecureFieldSuppressesOrigin() {
+        let line = BrowserDiagnosticMetadata.line(role: "AXTextField", subrole: "AXSecureTextField",
+            url: URL(string: "https://gemini.google.com/glic"), focusedWindow: false)
+        XCTAssertEqual(line,"role=AXTextField secure=true origin=unavailable focusedWindow=false")
+    }
+    func testGeminiAndInternalHostRemainDistinguishable() {
+        for origin in ["https://gemini.google.com", "chrome://glic"] {
+            let line = BrowserDiagnosticMetadata.line(role: "AXWebArea", subrole: nil,
+                url: URL(string: origin + "/private?authuser=secret"), focusedWindow: false)
+            XCTAssertTrue(line.contains("origin=" + origin + " "))
+            XCTAssertFalse(line.contains("private"))
+            XCTAssertFalse(line.contains("secret"))
+        }
+    }
+}
+
+/// Metadata observed 2026-10-07 01:46:20 UTC. No page text or full URLs.
+final class ObservedChromeFocusTests: XCTestCase {
+    private func nearest(_ roles: [String]) -> Int? {
+        WebAppMatcher.nearestFocusedWebArea(from: 0, role: { roles[$0] },
+            parent: { $0 + 1 < roles.count ? $0 + 1 : nil })
+    }
+    func testStandardGeminiPanelUsesGuestNotChromeHost() {
+        // Samples 28–29: focused textarea, guest at depth 11, chrome://glic at 18.
+        var roles = Array(repeating: "AXGroup", count: 25)
+        roles[0] = "AXTextArea"; roles[11] = "AXWebArea"; roles[18] = "AXWebArea"
+        let urls = [11: URL(string:"https://gemini.google.com")!, 18: URL(string:"chrome://glic")!]
+        let document = nearest(roles)
+        XCTAssertEqual(document,11)
+        XCTAssertEqual(WebAppMatcher.focusedGeminiService(role:roles[0], subrole:nil,
+            documentURL:document.flatMap { urls[$0] }), "web.gemini.google.com")
+    }
+    func testDeepAndShallowGeminiInputsRemainSupported() {
+        for depth in [3,17] { // samples 24 and 25–27
+            var roles=Array(repeating:"AXGroup",count:depth+1)
+            roles[0]="AXTextArea"; roles[depth]="AXWebArea"
+            XCTAssertEqual(nearest(roles),depth)
+        }
+    }
+    func testObservedAddressBarCannotMatchGemini() {
+        // Samples 15 and 17–20: toolbar ancestry, no web area.
+        let roles=["AXTextField","AXGroup","AXToolbar","AXGroup","AXGroup","AXGroup","AXGroup","AXGroup","AXWindow","AXApplication"]
+        XCTAssertNil(nearest(roles))
+        XCTAssertNil(WebAppMatcher.focusedGeminiService(role:roles[0],subrole:nil,documentURL:nil))
+    }
+    func testOtherInnerDocumentCannotBorrowGeminiOuterOrigin() {
+        let roles=["AXTextArea","AXGroup","AXWebArea","AXGroup","AXWebArea"]
+        let urls=[2:URL(string:"https://example.invalid")!,4:URL(string:"https://gemini.google.com")!]
+        let document=nearest(roles)
+        XCTAssertEqual(document,2)
+        XCTAssertNil(WebAppMatcher.focusedGeminiService(role:roles[0],subrole:nil,
+            documentURL:document.flatMap { urls[$0] }))
+    }
+    func testCyclesAndMissingParentsStopWithinBound() {
+        var calls=0
+        let node: Int? = WebAppMatcher.nearestFocusedWebArea(from:0,role:{ _ in calls += 1;return "AXGroup" },parent:{ $0 })
+        XCTAssertNil(node); XCTAssertEqual(calls,25)
+        XCTAssertNil(nearest(["AXTextArea"]))
+    }
+}
+
+final class RuntimeDiagnosticPrivacyTests: XCTestCase {
+    func testEvaluationDoesNotExportArbitraryServiceText() {
+        let result=BrowserEvaluation(service:"PRIVATE_CHAT_PASSWORD_LICENSE",reason:.otherFocusedWeb)
+        XCTAssertEqual(result.metadata,"reason=otherFocusedWeb gemini=false")
+        let state=BrowserDiagnosticRuntimeState(tapRunning:true,entitled:true,geminiEnabled:true,
+            remapperEnabled:true,targetActive:false,japanese:true,composing:false)
+        XCTAssertTrue(state.metadata.contains("targetActive=false"))
+        XCTAssertFalse(state.metadata.contains("PRIVATE"))
+    }
+}
+
+/// End-to-end pure replay of build11 focus-only metadata, not real key delivery.
+final class Build11FocusPipelineTests: XCTestCase {
+    func testObservedFocusSequenceThroughRemapEngine() {
+        let enabled=AppRegistry.webBundleIDs
+        let engine=RemapEngine()
+        engine.isEnabled=true
+        engine.inputSourceChanged(isJapanese:false)
+        // 11:18:49 JST: panel textarea -> non-input web area -> textarea -> omnibox.
+        let cases: [(String, Int?, Bool)] = [
+            ("AXTextArea",11,true), ("AXWebArea",0,false),
+            ("AXTextArea",17,true), ("AXTextField",nil,false)
+        ]
+        for (focusRole, documentDepth, expectedActive) in cases {
+            var roles=Array(repeating:"AXGroup",count:25)
+            roles[0]=focusRole
+            if let depth=documentDepth { roles[depth]="AXWebArea" }
+            else { roles[2]="AXToolbar" }
+            let document=WebAppMatcher.nearestFocusedWebArea(from:0,role:{roles[$0]},
+                parent:{$0+1<roles.count ? $0+1 : nil})
+            let url=document.map { _ in URL(string:"https://gemini.google.com")! }
+            let service=WebAppMatcher.focusedGeminiService(role:focusRole,subrole:nil,documentURL:url)
+            let active=service.map { enabled.contains($0) } ?? false
+            XCTAssertEqual(active,expectedActive)
+            engine.frontmostChanged(isTarget:active)
+            let expected: RemapAction = expectedActive ? .addShift : .passThrough
+            XCTAssertEqual(engine.keyDown(keycode:36,mods:[],isPhysical:true),expected)
+            XCTAssertEqual(engine.keyUp(keycode:36,mods:[]),expected)
+        }
+    }
+}

@@ -13,7 +13,7 @@ final class SettingsViewModel: ObservableObject {
 
     /// Enterで改行(送信しない)の設定を自動検出できたアプリ。UniEnterは素通しする
     var detectedCmdEnterSendApps: Set<String> {
-        Set(detectedSendKeys.filter { $0.value == .cmdEnterSend }.keys)
+        Set(detectedSendKeys.filter { $0.value == .cmdEnterSend }.keys).union(AppRegistry.nativeCmdEnterApps)
     }
     /// 「Enterで送信」の既定のままと自動検出できたアプリ。手動宣言があっても無視する
     var detectedStandardApps: Set<String> {

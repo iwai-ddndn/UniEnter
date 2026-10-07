@@ -74,7 +74,9 @@ struct SendKeyAppListView: View {
                 // 自動で確かめたアプリは、手で上書きできないよう固定する(0fa2bfaの方針)。
                 // ただし無効化したトグルはグレーで読めず「選べない」ように見えるので、
                 // 名前は通常の文字色のまま、チェック状態を記号で、分かったことをバッジで示す
-                if model.detectedCmdEnterSendApps.contains(app.bundleID) {
+                if AppRegistry.nativeCmdEnterApps.contains(app.bundleID) {
+                    detectedRow(app, checked: true, badge: "標準で⌘Enter送信 → キーをそのまま通します")
+                } else if model.detectedCmdEnterSendApps.contains(app.bundleID) {
                     detectedRow(app, checked: true, badge: "自動で確認: Enterで改行 → UniEnterは何もしません")
                 } else if model.detectedStandardApps.contains(app.bundleID) {
                     detectedRow(app, checked: false, badge: "自動で確認: Enterで送信(初期設定)")

@@ -38,6 +38,15 @@ enum AppRegistry {
         "com.facebook.archon.developerID": "com.facebook.archon", // Messenger直接配布版
     ]
 
+    /// oVice sends with Cmd+Enter natively. Never strip Cmd or alter space shortcuts.
+    /// https://help.ovice.com/hc/ja/articles/9412620248345
+    static let nativeCmdEnterApps: Set<String> = ["com.ovice.desktop.prod"]
+
+    static func passthroughApps(declared: Set<String>, detectedCmdEnter: Set<String>,
+                                detectedStandard: Set<String>) -> Set<String> {
+        declared.union(detectedCmdEnter).subtracting(detectedStandard).union(nativeCmdEnterApps)
+    }
+
     static let allBundleIDs: Set<String> = Set(all.map(\.bundleID))
     static let desktopBundleIDs: Set<String> = Set(all.filter(\.hasDesktop).map(\.bundleID))
     static let webBundleIDs: Set<String> = Set(all.filter(\.hasWeb).map(\.bundleID))

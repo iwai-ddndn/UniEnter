@@ -103,9 +103,16 @@ final class RemapEngine {
     /// - Parameter characters: そのキーがキーボード配列上で生成する文字列(CGEventのUnicode文字列)。
     ///   IMEを通す前の値でよい。トリガー文字(`@`等)の判定にのみ使い、不明なら空文字。
     func keyDown(keycode: Int64, mods: Modifiers, isPhysical: Bool, characters: String = "") -> RemapAction {
-        guard isEnabled, isTargetAppActive else { return .passThrough }
+        guard isEnabled else { return .passThrough }
         // IME等が合成(post)したイベントは無条件素通し(物理キーのみ書き換え対象)
         guard isPhysical else { return .passThrough }
+        // A temporary AX cache miss must not hide composition that starts meanwhile.
+        // Never remap a non-target; only maintain the conservative IME estimate.
+        guard isTargetAppActive else {
+            if Self.returnKeycodes.contains(keycode) { isComposing = false }
+            else { updateComposition(keycode: keycode, mods: mods) }
+            return .passThrough
+        }
 
         if Self.returnKeycodes.contains(keycode) {
             if isJapaneseMode && isComposing {
@@ -166,6 +173,21 @@ final class RemapEngine {
         isJapaneseMode = isJapanese
         isComposing = false
         // 「英数で @ → かなに切替 → 名前を入力」の流れがあるため候補推定は維持する
+    }
+
+    /// Cache revalidation is not an app switch: preserve composition and keyUp pairing.
+    func targetAvailabilityChanged(isTarget: Bool) {
+        if isTargetAppActive && !isTarget {
+            endSuggestion()
+            atWordBoundary = true
+            atLineStart = false
+        }
+        isTargetAppActive = isTarget
+    }
+
+    /// Boolean activity signal only; no characters are passed to the browser monitor.
+    static func isTextInputActivity(keycode: Int64, mods: Modifiers) -> Bool {
+        !mods.contains(.command) && !mods.contains(.control) && textKeycodes.contains(keycode)
     }
 
     /// 前面アプリが切り替わった

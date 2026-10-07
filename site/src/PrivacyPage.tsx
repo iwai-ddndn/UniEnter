@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <LegalLayout
       title="プライバシーポリシー"
-      established="制定日: 2026年7月22日 / 最終改定日: 2026年9月30日"
+      established="制定日: 2026年7月22日 / 最終改定日: 2026年10月7日"
     >
       <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
         octo(https://oc-to.com、以下「提供者」)は、macOS用ソフトウェア「UniEnter」(以下「本アプリ」)
@@ -14,8 +14,11 @@ export default function PrivacyPage() {
       <LegalSection title="1. 基本方針">
         <p>
           本アプリは、利用者の入力内容や個人情報を収集しません。
-          キーボードの入力イベントは、Enterキーの挙動を統一する判定のためにMac内でのみ処理され、
-          記録・保存・外部送信は一切行いません。
+          キーボードの入力内容は、Enterキーの挙動を統一する判定のためにMac内でのみ処理され、
+          入力本文を記録・保存・外部送信することはありません。
+          動作確認のため、アプリ名・入力先の判定・Enter処理結果などの技術情報がMac内のログに残る場合があります。
+          また、利用者が診断を開始した場合は、通知・判定結果・文字入力があった事実を30秒間、Mac内に保存します。
+          診断に入力本文・画面タイトル・URLの詳細・ライセンスキーは含めず、自動で外部送信しません。
         </p>
       </LegalSection>
 
