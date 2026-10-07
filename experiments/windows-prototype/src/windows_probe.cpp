@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#include <ole2.h> // COM declarations excluded by WIN32_LEAN_AND_MEAN
 #include <UIAutomation.h>
 #include <wrl/client.h>
 #include <atomic>
