@@ -12,10 +12,10 @@
 | --- | --- | --- |
 | オンボーディング(アクセシビリティ許可の誘導) | ![](01-onboarding-light.png) | ![](01-onboarding-dark.png) |
 | オンボーディング(10秒経過後に出るトラブルシューティング付き) | ![](02-onboarding-troubleshooting-light.png) | ![](02-onboarding-troubleshooting-dark.png) |
-| チュートリアル 1/2 — 覚えるのは2つだけ | ![](03-tutorial-1-keys-light.png) | ![](03-tutorial-1-keys-dark.png) |
-| チュートリアル 2/2 — Enter=改行設定のアプリを確認(LINE/Slackとも自動検出の例) | ![](04-tutorial-2-sendkey-light.png) | ![](04-tutorial-2-sendkey-dark.png) |
+| 使い方 — 基本操作だけで利用開始 | ![](03-tutorial-keys-light.png) | ![](03-tutorial-keys-dark.png) |
 | 設定(既定状態) | ![](05-settings-light.png) | ![](05-settings-dark.png) |
 | 設定(詳細オプション: アプリ側の送信キー を展開、LINE/Slackとも自動検出の例) | ![](06-settings-advanced-light.png) | ![](06-settings-advanced-dark.png) |
+| 詳細設定 — 添付と同じ4行・未検出の説明文 | ![](06-settings-advanced-four-apps-light.png) | ![](06-settings-advanced-four-apps-dark.png) |
 | ライセンス(トライアル中・残り11日) | ![](07-license-trial-light.png) | ![](07-license-trial-dark.png) |
 | ライセンス(トライアル終了・書き換え停止中) | ![](08-license-expired-light.png) | ![](08-license-expired-dark.png) |
 | ライセンス(認証済み) | ![](09-license-activated-light.png) | ![](09-license-activated-dark.png) |

@@ -1,60 +1,26 @@
 import SwiftUI
 
-/// 初回起動時に一度だけ表示する使い方チュートリアル。
-///
-/// 読むだけの説明ステップは置かず、「操作の説明」と「アプリ側の送信キー確認」の
-/// 2ステップだけに絞る(対象アプリは既定ですべてONなので選ばせない)。
+/// 権限付与後に表示する基本操作の案内。任意の送信キー設定は設定画面にまとめる。
 struct TutorialView: View {
-    @ObservedObject var model: SettingsViewModel
     var finish: () -> Void
-
-    @State private var step: Int
-    private let totalSteps = 2
-
-    init(model: SettingsViewModel, finish: @escaping () -> Void, step: Int = 0) {
-        self.model = model
-        self.finish = finish
-        _step = State(initialValue: step)
-    }
 
     var body: some View {
         VStack(spacing: 20) {
-            // 送信キー確認ステップだけリストがあるので上詰め、他は中央寄せ
-            if step != 1 { Spacer(minLength: 0) }
-            Group {
-                switch step {
-                case 0: stepKeys
-                default: stepSendKey
-                }
-            }
-            .frame(maxWidth: .infinity)
-
-            Spacer(minLength: 0)
-
-            HStack(spacing: 6) {
-                ForEach(0..<totalSteps, id: \.self) { i in
-                    Circle()
-                        .fill(i == step ? Color.accentColor : Color.secondary.opacity(0.3))
-                        .frame(width: 7, height: 7)
-                }
-            }
-
+            stepKeys
+            Text("困ったときは、メニューバーの ⏎ →「設定…」から\n「⌘Enterを押しても送信できないときは」を開けます。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             HStack {
-                if step > 0 {
-                    Button("戻る") { step -= 1 }
-                }
                 Spacer()
-                if step < totalSteps - 1 {
-                    Button("次へ") { step += 1 }
-                        .keyboardShortcut(.defaultAction)
-                } else {
-                    Button("さっそく使う") { finish() }
-                        .keyboardShortcut(.defaultAction)
-                }
+                Button("さっそく使う", action: finish)
+                    .keyboardShortcut(.defaultAction)
             }
         }
         .padding(24)
-        .frame(width: 460, height: 400)
+        .frame(width: 460)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func key(_ label: String) -> some View {
@@ -87,31 +53,8 @@ struct TutorialView: View {
                 .font(.callout)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-        }
-    }
-
-    // 実際に最初につまずくのがここ。アプリ自身の設定でEnterが「改行」になっていると
-    // UniEnterと二重にかかって送信できなくなるため、使い始める前に確認してもらう
-    private var stepSendKey: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("アプリの設定で、Enterを「改行」に\nしているものはありますか?")
-                .font(.title3.bold())
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-            Text("ほとんどの方は該当しません。そのまま「さっそく使う」で大丈夫です。\nアプリ自身の設定でEnterを改行に変えている場合だけ、チェックしてください。UniEnterはそのアプリに手を出さなくなります。LINEとSlackは自動で確かめます。")
-                .font(.caption)
-                .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-
-            SendKeyAppListView(model: model)
-
-            Spacer(minLength: 0)
-
-            Text("SlackやChatGPTで、Enterを押して試してみてください。\nあとで⌘Enterで送れないと気付いたら、メニューバーの ⏎ から直せます。")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
         }
     }
+
 }

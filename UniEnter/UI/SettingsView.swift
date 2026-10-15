@@ -101,104 +101,116 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("対象アプリ")
-                .font(.headline)
-            Text("チェックを入れたところは、Enterで改行・⌘Enterで送信になります。")
-                .font(.caption)
-                .foregroundColor(.secondary)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("対象アプリ")
+                        .font(.headline)
+                    Text("チェックを入れたところは、Enterで改行・⌘Enterで送信になります。")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
 
-            Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 5) {
-                GridRow {
-                    Text("")
-                    Text("Macアプリ")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                    Text("ブラウザ版")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                ForEach(AppRegistry.all, id: \.bundleID) { app in
-                    GridRow {
-                        Text(app.name)
-                            .gridColumnAlignment(.leading)
-                        if app.hasDesktop {
-                            Toggle("", isOn: model.desktopEnabled(app))
-                                .labelsHidden()
-                                .gridColumnAlignment(.center)
-                        } else {
-                            Text("—")
-                                .foregroundColor(Color.secondary.opacity(0.5))
-                                .gridColumnAlignment(.center)
+                    Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 5) {
+                        GridRow {
+                            Text("")
+                            Text("Macアプリ")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Text("ブラウザ版")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
                         }
-                        if app.hasWeb {
-                            Toggle("", isOn: model.webEnabled(app))
-                                .labelsHidden()
-                                .gridColumnAlignment(.center)
-                        } else {
-                            Text("—")
-                                .foregroundColor(Color.secondary.opacity(0.5))
-                                .gridColumnAlignment(.center)
+                        ForEach(AppRegistry.all, id: \.bundleID) { app in
+                            GridRow {
+                                Text(app.name)
+                                    .gridColumnAlignment(.leading)
+                                if app.hasDesktop {
+                                    Toggle("", isOn: model.desktopEnabled(app))
+                                        .labelsHidden()
+                                        .gridColumnAlignment(.center)
+                                } else {
+                                    Text("—")
+                                        .foregroundColor(Color.secondary.opacity(0.5))
+                                        .gridColumnAlignment(.center)
+                                }
+                                if app.hasWeb {
+                                    Toggle("", isOn: model.webEnabled(app))
+                                        .labelsHidden()
+                                        .gridColumnAlignment(.center)
+                                } else {
+                                    Text("—")
+                                        .foregroundColor(Color.secondary.opacity(0.5))
+                                        .gridColumnAlignment(.center)
+                                }
+                            }
                         }
                     }
-                }
-            }
-            .padding(.leading, 4)
+                    .padding(.leading, 4)
 
-            Text("ブラウザ版は、Safari・Chrome・Edge・Arcでそのサービスのページを開いているときに働きます。")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Divider()
-
-            // ここは「困ったときに自分で見つけられる」ことが最優先。
-            // アプリ自身の設定でEnterが「改行」になっている人は、UniEnterと二重にかかって
-            // 送信できなくなる。LINE/Slackは設定ファイルから自動検出できる(SendKeyDetector)が、
-            // それ以外は外部から検知する手段がないため、症状から辿れる形にしてある。
-            DisclosureGroup(isExpanded: $model.showAdvanced) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("アプリ自身の設定でEnterを「改行」にしていると、UniEnterと二重にかかって送信できなくなります。そのアプリにチェックを入れると、UniEnterは手を出さなくなります。LINEとSlackは自動で確かめます。")
+                    Text("ブラウザ版は、Safari・Chrome・Edge・Arcでそのサービスのページを開いているときに働きます。")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Enterを「改行」に設定しているアプリ:")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 2)
+                    Divider()
 
-                    SendKeyAppListView(model: model)
-                        .padding(.leading, 4)
+                    // ここは「困ったときに自分で見つけられる」ことが最優先。
+                    // アプリ自身の設定でEnterが「改行」になっている人は、UniEnterと二重にかかって
+                    // 送信できなくなる。LINE/Slackは設定ファイルから自動検出できる(SendKeyDetector)が、
+                    // それ以外は外部から検知する手段がないため、症状から辿れる形にしてある。
+                    DisclosureGroup(isExpanded: $model.showAdvanced) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("アプリ自身の設定でEnterを「改行」にしていると、UniEnterと二重にかかって送信できなくなります。そのアプリにチェックを入れると、UniEnterは手を出さなくなります。LINEとSlackは自動で確かめます。")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
 
-                    if let recheck = model.onRecheckSendKeys {
-                        Button("LINE・Slackの設定を読み直す", action: recheck)
-                            .controlSize(.small)
-                            .padding(.top, 2)
-                        Text("LINE・Slackの設定を読むときにmacOSの確認が出ます。「許可しない」を選んだあとのやり直し用です(許可しなくても、上のチェックで指定できます)。")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                            Text("Enterを「改行」に設定しているアプリ:")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .padding(.top, 2)
+
+                            SendKeyAppListView(model: model)
+                                .padding(.leading, 4)
+
+                            if let recheck = model.onRecheckSendKeys {
+                                Button("LINE・Slackの設定を読み直す", action: recheck)
+                                    .controlSize(.small)
+                                    .padding(.top, 2)
+                                Text("LINE・Slackの設定を読むときにmacOSの確認が出ます。「許可しない」を選んだあとのやり直し用です(許可しなくても、上のチェックで指定できます)。")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .padding(.top, 6)
+                    } label: {
+                        Text("⌘Enterを押しても送信できないときは")
+                            .font(.subheadline)
                     }
+
+                    .id("send-key-options")
+
+                    Divider()
+
+                    Toggle("ログイン時に起動", isOn: Binding(
+                        get: { model.launchAtLogin },
+                        set: { model.setLaunchAtLogin($0) }
+                    ))
+
+                    Divider()
+
+                    CreditLine()
                 }
-                .padding(.top, 6)
-            } label: {
-                Text("⌘Enterを押しても送信できないときは")
-                    .font(.subheadline)
+                .padding(20)
             }
-
-            Divider()
-
-            Toggle("ログイン時に起動", isOn: Binding(
-                get: { model.launchAtLogin },
-                set: { model.setLaunchAtLogin($0) }
-            ))
-
-            Divider()
-
-            CreditLine()
+            .frame(width: 400, height: 560)
+            .onAppear {
+                if model.showAdvanced { proxy.scrollTo("send-key-options", anchor: .top) }
+            }
+            .onChange(of: model.showAdvanced) { expanded in
+                if expanded { proxy.scrollTo("send-key-options", anchor: .top) }
+            }
         }
-        .padding(20)
-        .frame(width: 340)
     }
 }

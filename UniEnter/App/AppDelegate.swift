@@ -325,7 +325,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         let view = TutorialView(
-            model: ensureSettingsModel(),
             finish: { [weak self] in
                 self?.tutorialWindow?.close()
                 self?.tutorialWindow = nil

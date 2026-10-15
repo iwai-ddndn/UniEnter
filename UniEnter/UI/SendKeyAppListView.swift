@@ -87,6 +87,7 @@ struct SendKeyAppListView: View {
                 if model.isAppInstalled?(app.bundleID) ?? true {
                     Button("確認しにいく") { model.openApp?(app.bundleID) }
                         .controlSize(.small)
+                        .fixedSize()
                 } else {
                     Text("未インストール")
                         .font(.caption2)
@@ -97,6 +98,7 @@ struct SendKeyAppListView: View {
                 Text(hint)
                     .font(.caption2)
                     .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.leading, 22)
             }
         }
@@ -113,6 +115,7 @@ struct SendKeyAppListView: View {
             Text(badge)
                 .font(.caption2)
                 .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 1)
                 .background(Color.secondary.opacity(0.15), in: Capsule())
