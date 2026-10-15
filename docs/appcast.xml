@@ -10,6 +10,19 @@
     <language>ja</language>
 <!-- items -->
     <item>
+      <title>UniEnter 0.3.7</title>
+      <pubDate>Thu, 15 Oct 2026 00:36:58 GMT</pubDate>
+      <sparkle:version>14</sparkle:version>
+      <sparkle:shortVersionString>0.3.7</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <description><![CDATA[
+<h3>UniEnter 0.3.7</h3>
+<p>初回の使い方を基本操作の説明だけにし、そのまま利用を開始できるようにしました。詳しい送信キー設定は「設定…」の「⌘Enterを押しても送信できないときは」から開けます。</p>
+<p>設定画面をスクロール対応にし、日本語の説明文が途中で切れる問題を修正しました。保存済み設定やキー入力の変換処理、権限の仕組みは変更していません。</p>
+]]></description>
+      <enclosure url="https://github.com/iwai-ddndn/UniEnter/releases/download/v0.3.7/UniEnter.zip" type="application/octet-stream" sparkle:edSignature="4sG/OL861PucKOb3nwDNO6XIpkAvzDJFAS2Thobc5THbLnwKNqvjP/ha6P2I1ulslOMJyWIwpW89kZaJgb23DQ==" length="1716278" />
+    </item>
+    <item>
       <title>UniEnter 0.3.6</title>
       <pubDate>Wed, 07 Oct 2026 07:32:18 GMT</pubDate>
       <sparkle:version>13</sparkle:version>
